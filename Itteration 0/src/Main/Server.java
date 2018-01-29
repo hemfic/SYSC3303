@@ -29,7 +29,7 @@ public class Server {
 				receivePacket = new DatagramPacket(data, data.length);
 				System.out.println("Server: Waiting for Packet.\n");
 				receiveSocket.receive(receivePacket);
-				System.out.println("Server: data received -- "+ receivePacket.getData());
+				System.out.println("Server: data received -- "+ receivePacket.getData().toString());
 				System.out.println("Server: rough decription -- "+new String(receivePacket.getData()));
 				Thread clientResponseThread = new Thread(allResponseThreads,new ClientConnectionThread(receivePacket));
 				clientResponseThread.start();

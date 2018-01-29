@@ -24,7 +24,7 @@ public class ClientConnectionThread extends Thread{
 			System.out.println("ConnectionThread: An error occured while trying to create a socket for client connection.");
 			try {
 				sendRecieveSocket = new DatagramSocket();
-				System.out.println(sendRecieveSocket.getLocalPort());
+				System.out.println("ServerThread: New socket "+sendRecieveSocket.getLocalSocketAddress());
 			}catch(SocketException se) {
 				System.out.println("ConnectionThread: Second try to create socket failed. Closing thread");
 				System.out.println(se.getCause());
@@ -39,26 +39,27 @@ public class ClientConnectionThread extends Thread{
 	}
 	private int parse() {
 		//Test for validity of data
-		if(clientRequest.getLength()<6) return respondError("Improperly formatted request",4);
+		if(clientRequest.getLength()<6) return respondError("Request too short",4);
 		byte data[] = clientRequest.getData();
 		int naught[] = new int[3];
 		int j = 0;
 		for(int i=0;i<clientRequest.getLength();i++) {
 			if(data[i]==0) {
-				if(j>2) return respondError("Improperly formatted request",4);
+				System.out.println(i);
+				if(j>2) return respondError("Too many zeroes",4);
 				naught[j++]=i;
 			}
 		}
 		//need exactly three zeros. No more, no less.
-		if(j<2) return respondError("Improperly formatted request",4);
+		if(j<2) return respondError("Not enough zeroes",4);
 		//No empty Strings plz;
-		if(naught[0]>0 || naught[1]==3 || naught[2]==naught[1]+1) return respondError("Improperly formatted request",4);
+		if(naught[0]>0 || naught[1]==3 || naught[2]==naught[1]+1) return respondError("One or more empty strings",4);
 		//If strings are non-empty then do the work to make it
 		String fName = new String(data,2,naught[1]);
 		String method = new String(data,naught[1]+1,naught[2]);
 		method = method.toLowerCase();
 		
-		if(method!="netascii" && method!="octet" && method!="mail") return respondError("Invalid method",4);
+		if(!method.equals("netascii") && !method.equals("octet"))return respondError("Invalid method: "+method,4);
 		
 		//Valid enough; Prepare response
 		if(data[1]==1) {
@@ -227,7 +228,7 @@ public class ClientConnectionThread extends Thread{
 		byte[] errorArray = errorMsg.getBytes();
 		dataBuffer = ByteBuffer.allocate((errorArray.length+5));
 		dataBuffer.putShort((short)5).putShort((short)errorCode).put(errorArray).put((byte)0);
-		System.out.printf("Sending error packet to: %s %d%n",clientRequest.getAddress(),clientRequest.getPort());
+		System.out.printf("ServerThread: Sending error packet to: %s %d%n",clientRequest.getAddress(),clientRequest.getPort());
 		dataPacket = new DatagramPacket(dataBuffer.array(),dataBuffer.position(),clientRequest.getAddress(),clientRequest.getPort());
 		try {
 			sendRecieveSocket.send(dataPacket);
