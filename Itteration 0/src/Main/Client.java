@@ -14,7 +14,7 @@ public class Client {
 	   receivePacket=new DatagramPacket(rcvData, rcvData.length); //initialize receiving packet - receiving will load data into rcvData directly
 	   try {
 		   sockRS = new DatagramSocket();
-		   sockRS.setSoTimeout(500);
+		   sockRS.setSoTimeout(50000);
 	   } catch (Exception e) {   // Can't create the socket.
 		   e.printStackTrace();
 		   System.exit(1);
@@ -52,7 +52,7 @@ public class Client {
 	   System.out.println("Sending(byte): "+Arrays.toString(sendData));
 	   
 	   try {
-		   sendPacket=new DatagramPacket(sendData, sendData.length,InetAddress.getLocalHost() , 23);
+		   sendPacket=new DatagramPacket(sendData, 4+typeB.length+filename.length,InetAddress.getLocalHost() , 23);
 		   sockRS.send(sendPacket);		//load packet and send
 	   } catch (Exception e) {
 		   e.printStackTrace();
