@@ -25,6 +25,7 @@ public class Host {
 	}
 	public void receive() {
 		try {
+			System.out.println("Host: Waiting for package...");
 			sockR.receive(receivePacket);
 			System.out.println("Host: Package received");
 	        (new Thread(new HostConnectionManager(receivePacket))).start();
