@@ -14,7 +14,7 @@ public class Host {
 	
 	public Host() {
 		System.out.println("Creating Host");
-		rcvData=new byte[100];					//buffer for receiving data
+		rcvData=new byte[516];					//buffer for receiving data
 		receivePacket=new DatagramPacket(rcvData, rcvData.length);
 		try {
 	         sockR = new DatagramSocket(23);

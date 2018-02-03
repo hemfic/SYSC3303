@@ -91,6 +91,7 @@ public class ClientConnectionThread extends Thread{
 
 		    //prebuild expected ack to make for easy comparison;
 		    byte[] expectedACK = new byte[4];
+		    byte[]data;
 		    expectedACK[0]=(byte)0;
 		    expectedACK[1]=(byte)4;
 		    
@@ -116,7 +117,8 @@ public class ClientConnectionThread extends Thread{
 		    		e.printStackTrace();
 		    	}
 		    	//If ACKPacket is as expected then move to the next block, else assume loss and repeat?
-		    	if(ACKPacket.getData().equals(expectedACK)) ++block;
+		    	data=ACKPacket.getData();
+		    	if(data[0]==expectedACK[0]&&data[1]==expectedACK[1]) ++block;
 		    	else {
 		    		System.out.println("Unexpected packet recieved");
 		    		System.out.println("Non-optimal package order not protected for");
