@@ -100,7 +100,7 @@ public class Client {
    public DatagramPacket buildAck(int block,InetAddress address,int port) {
 	   DatagramPacket ret=null;
 	   byte[] data= {0,4,0,0};
-	   byte[] b=ByteBuffer.allocate(4).putInt(block+1).array();
+	   byte[] b=ByteBuffer.allocate(4).putInt(block).array();
 	   data[2]=b[2];
 	   data[3]=b[3];
 	   System.out.println("ACK: "+Arrays.toString(data));
@@ -127,7 +127,7 @@ public class Client {
 		   System.exit(1);
 	   }
 	   while(!done) {
-		   byte[] raw=Arrays.copyOfRange(rcvData, 4,rcvData.length-1);
+		   byte[] raw=Arrays.copyOfRange(rcvData, 4,rcvData.length);
 		   byte[] rawB=Arrays.copyOfRange(rcvData, 2, 4);
 		   int block= rawB[1]+(rawB[0]*16);
 		   if(raw.length<512) {
@@ -146,7 +146,7 @@ public class Client {
 				   }
 			   }
 		   }
-		   System.out.println("Sending ACK for block: "+(block+1));
+		   System.out.println("Sending ACK for block: "+(block));
 		   try {
 			   sockRS.send(buildAck(block,serverAddress,serverPort));
 		   } catch (IOException e1) {
@@ -239,8 +239,8 @@ public class Client {
 
    public static void main(String args[])
    {	
-	  String f="C:\\Users\\ericreesor\\eclipse-workspace\\SYSC3303-master\\iteration1\\src\\Main\\text1.txt";
-	  String f2="C:\\Users\\ericreesor\\eclipse-workspace\\SYSC3303-master\\iteration1\\src\\Main\\text2.txt";
+	  String f="C:\\Users\\ericreesor\\Documents\\GitHub\\SYSC3303\\iteration1\\src\\Main\\text1.txt";
+	  String f2="C:\\Users\\ericreesor\\Documents\\GitHub\\SYSC3303\\iteration1\\src\\Main\\text2.txt";
       Client c = new Client();
       c.send(1,f,f2);
       //c.send(2,f,f2);
