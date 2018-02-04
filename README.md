@@ -20,9 +20,9 @@ ClientConnectionThread.java: handles an indivul Client's request. Validates the 
 ServerConsoleThread.java: polls for user input. When exit code is confirmed, system will exit.
 
 Diagrams:
--UML
--UCM_ReadRequest
--UCM_WriteRequest
+ -UML
+ -UCM_ReadRequest
+ -UCM_WriteRequest
 
 Team: 
 Sarah Elizabeth "Liz" Davies  -- 100828244 -- SarahDavies4@cmail.carleton.ca
