@@ -2,7 +2,9 @@ package Main;
 import java.io.*;
 public class ServerConsoleThread extends Thread {
 	String shutdownCode = "000";
+	String flipVerbose = "111";
 	BufferedReader consoleResponse;
+	ThreadGroup family;
 	public ServerConsoleThread() {
 		consoleResponse = new BufferedReader(new InputStreamReader(System.in));
     }
@@ -14,7 +16,7 @@ public class ServerConsoleThread extends Thread {
 	        	if (shutdownCode.equals(input)) {
 	        		System.out.printf("%n%nShutting down the server softly%nSome threads will continue running until complete%n%n");
 	        		System.exit(0);
-	        	}else {
+	        	}else{
 	        		System.out.println("Server: "+input+" is not a recognized code");
 	        	}
 	        }catch(IOException e) {
