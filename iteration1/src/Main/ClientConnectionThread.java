@@ -224,7 +224,7 @@ public class ClientConnectionThread extends Thread{
 		    	rc = fileController.write(dataBuffer,block*512).get();
 		    	lock.release();
 		    	try {
-		    		sendRecieveSocket.send(ackPacket);
+		    		sendRecieveSocket.send(ACKPacket);
 		    	}catch(IOException e) {
 		    		System.out.println("ServerThread("+threadId+"): IOException while trying to send data packet");
 		    		e.printStackTrace();
