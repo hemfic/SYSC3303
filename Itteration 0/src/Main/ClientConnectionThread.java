@@ -86,7 +86,7 @@ public class ClientConnectionThread extends Thread{
 		try {
 			fileController = AsynchronousFileChannel.open(file.toPath(),StandardOpenOption.READ);
 			//yes this line is a little hack-y, but its the only way to prevent Execution Exception
-			fileController.lock(0,file.length(),true).get();
+			
 		    int block = 0;
 
 		    //prebuild expected ack to make for easy comparison;
@@ -96,13 +96,32 @@ public class ClientConnectionThread extends Thread{
 		    
 		    //DOWHILE read buffer, send, recieve acknowledgment;
 		    int rc = 512;
+		    FileLock lock;
 		    while (rc>511) {
 		    	//(2) OPCODE | (2) Block | (0-512) bytes
 		    	//OPCODE
 		    	dataBuffer = ByteBuffer.allocate(516);
 		    	//					 (2)OP   | 		      (2) block
 		    	dataBuffer.putShort((short)3).putShort((short)(block+1));
+		    	
+		    	while(true) {
+					try {
+						lock = fileController.lock(block*512,512,true).get();
+						break;
+					}catch(OverlappingFileLockException e) {
+						
+					}catch(NonReadableChannelException e) {
+						return respondError("Cannot read from file",1);
+					}catch(IllegalArgumentException e) {
+						System.out.println("ServerThread("+threadId+"): "+e.getCause());
+						return respondError("Illegal Argument",5);
+					}catch(Exception e) {
+						System.out.println("ServerThread("+threadId+"): "+e.getCause());
+						e.printStackTrace();
+					}
+				}
 		    	rc = fileController.read(dataBuffer,block*512).get();
+		    	lock.release();
 		    	expectedACK[2] = (byte)((block+1) >> 8);
 		    	expectedACK[3] = (byte)(block+1);
 		    	dataPacket = new DatagramPacket(dataBuffer.array(),4+rc,clientRequest.getAddress(),clientRequest.getPort());
@@ -152,20 +171,7 @@ public class ClientConnectionThread extends Thread{
 				if(!file.canWrite()) return respondError("Cannot write to specified file",6);
 			}
 			fileController = AsynchronousFileChannel.open(file.toPath(),StandardOpenOption.WRITE);
-			while(true) {
-				try {
-					fileController.lock().get();
-					break;
-				}catch(NonWritableChannelException e) {
-					return respondError("Cannot read from file",1);
-				}catch(IllegalArgumentException e) {
-					System.out.println("ServerThread("+threadId+"): "+e.getCause());
-					return respondError("Illegal Argument",5);
-				}catch(Exception e) {
-					System.out.println("ServerThread("+threadId+"): "+e.getCause());
-					e.printStackTrace();
-				}
-			}
+			FileLock lock;
 			dataBuffer = ByteBuffer.allocate(516);
 	    	dataBuffer.putShort((short)3);
 	    	//block
@@ -192,9 +198,24 @@ public class ClientConnectionThread extends Thread{
 		    	dataBuffer.put(Arrays.copyOfRange(dataPacket.getData(),4,dataPacket.getLength()));
 		    	block = data[2]<<8;
 		    	block += data[3];
-		    	rc = fileController.write(dataBuffer,block*512).get();
 		    	ack[2] = data[2];
 		    	ack[3] = data[3];
+				while(true) {
+					try {
+						lock = fileController.lock().get();
+						break;
+					}catch(NonWritableChannelException e) {
+						return respondError("Cannot read from file",1);
+					}catch(IllegalArgumentException e) {
+						System.out.println("ServerThread("+threadId+"): "+e.getCause());
+						return respondError("Illegal Argument",5);
+					}catch(Exception e) {
+						System.out.println("ServerThread("+threadId+"): "+e.getCause());
+						e.printStackTrace();
+					}
+				}
+		    	rc = fileController.write(dataBuffer,block*512).get();
+		    	lock.release();
 		    	ACKPacket = new DatagramPacket(ack,4);
 		    	try {
 		    		sendRecieveSocket.send(dataPacket);
