@@ -29,7 +29,7 @@ public class Client {
    private DatagramPacket sendPacket, receivePacket;
    private DatagramSocket sockRS;
    private byte[] rcvData; 						//buffer for receiving data
-
+   private String folderStructure = "src/Main/";
    public Client() {
 	   rcvData=new byte[516]; 			//server only sends 4 bytes
 	   receivePacket=new DatagramPacket(rcvData, rcvData.length); //initialize receiving packet - receiving will load data into rcvData directly
@@ -121,7 +121,7 @@ public class Client {
 	   boolean done=false;
 	   byte[] data= {};
 	   try {
-		   fout=new FileOutputStream(filename);
+		   fout=new FileOutputStream(folderStructure+filename);
 	   } catch (FileNotFoundException e) {
 		   e.printStackTrace();
 		   System.exit(1);
@@ -160,9 +160,9 @@ public class Client {
 				   e.printStackTrace();
 				   System.exit(1);
 			   }
-
+			   System.out.println("Narp");
 			   System.out.println("Received (string): "+new String(rcvData));
-			   System.out.println("Received (byte): "+Arrays.toString(rcvData));
+			   System.out.println("Received (byte): "+Arrays.toString(receivePacket.getData()));
 		   }
 	   }
 	   try {
@@ -192,7 +192,7 @@ public class Client {
 	   int size=0;
 	   int blocks;
 	   try {
-		   fin=new FileInputStream(filename);
+		   fin=new FileInputStream(folderStructure+filename);
 	   } catch (FileNotFoundException e) {
 		   e.printStackTrace();
 		   System.exit(1);
@@ -239,8 +239,8 @@ public class Client {
 
    public static void main(String args[])
    {	
-	  String f="C:\\Users\\ericreesor\\Documents\\GitHub\\SYSC3303\\iteration1\\src\\Main\\text1.txt";
-	  String f2="C:\\Users\\ericreesor\\Documents\\GitHub\\SYSC3303\\iteration1\\src\\Main\\text2.txt";
+	  String f="text1.txt";
+	  String f2="text2.txt";
       Client c = new Client();
       c.send(1,f,f2);
       //c.send(2,f,f2);

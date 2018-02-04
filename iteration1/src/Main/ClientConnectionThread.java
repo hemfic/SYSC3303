@@ -13,6 +13,8 @@ public class ClientConnectionThread extends Thread{
 	
 	int threadId;
 	
+	String serverFiles = "src/Main/ServerFiles";
+	
 	DatagramPacket clientRequest;
 	
 	AsynchronousFileChannel fileController;
@@ -78,11 +80,11 @@ public class ClientConnectionThread extends Thread{
 	}
 	private int respondRead(String fName,String method) {
 		//Confirm file
-		File file = new File("ServerFiles/"+fName);
-		System.out.println(file.toString());
-		if(!file.exists()) return respondError("File does not exist",1);
-		if(!file.canRead()) return respondError("File cannot be read",1);
-		if(file.length()>33554432) return respondError("File is too long for transfer",3);
+		File file = new File(serverFiles,fName);
+		System.out.println("ServerThread("+threadId+"): "+file.toString());
+		if(!file.getAbsoluteFile().exists()) return respondError("File does not exist",1);
+		if(!file.getAbsoluteFile().canRead()) return respondError("File cannot be read",1);
+		if(file.getAbsoluteFile().length()>33554432) return respondError("File is too long for transfer",3);
 
 		//Acquire file lock
 		try {
@@ -137,7 +139,7 @@ public class ClientConnectionThread extends Thread{
 		    		e.printStackTrace();
 		    	}
 		    	//If ACKPacket is as expected then move to the next block, else assume loss and repeat?
-		    	if(ACKPacket.getData()[2] == expectedACK[2]&& ACKPacket.getData()[3]==expectedACK[3]) ++block;
+		    	if(Arrays.equals(ack,expectedACK)) ++block;
 		    	else {
 		    		rc =512;
 		    		System.out.println("Unexpected packet recieved");
@@ -166,12 +168,12 @@ public class ClientConnectionThread extends Thread{
 	}
 	private int respondWrite(String fName,String method) {
 		//Check file
-		File file = new File("ServerFiles/"+fName);
-		System.out.println(file.getName());
+		File file = new File(serverFiles,fName);
+		System.out.println(file.getAbsolutePath());
 		//Acquire file lock
 		try {		
-			if(!file.createNewFile()) {
-				if(!file.canWrite()) return respondError("Cannot write to specified file",6);
+			if(!file.getAbsoluteFile().createNewFile()) {
+				if(!file.getAbsoluteFile().canWrite()) return respondError("Cannot write to specified file",6);
 			}
 			fileController = AsynchronousFileChannel.open(file.toPath(),StandardOpenOption.WRITE);
 			FileLock lock;
