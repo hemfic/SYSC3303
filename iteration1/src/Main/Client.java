@@ -7,7 +7,6 @@ import java.io.IOException;
 import java.net.*;
 import java.nio.ByteBuffer;
 import java.util.Arrays;
-import java.util.Scanner;
 /*
 Type   Opcode     Format without header
 
@@ -30,9 +29,9 @@ public class Client {
    private DatagramPacket sendPacket, receivePacket;
    private DatagramSocket sockRS;
    private byte[] rcvData; 						//buffer for receiving data
-
+   private String folderStructure = "src/Main/";
    public Client() {
-	   rcvData=new byte[516]; 			
+	   rcvData=new byte[516]; 			//server only sends 4 bytes
 	   receivePacket=new DatagramPacket(rcvData, rcvData.length); //initialize receiving packet - receiving will load data into rcvData directly
 	   try {
 		   sockRS = new DatagramSocket();
@@ -43,14 +42,9 @@ public class Client {
 	   }
    }
    
-   public void send(int type, String source,String dest,int mode) {
-	   int index=2;	//offset for packet creation
+   public void send(int type, String source,String dest) {
+	   int index=2;						//offset for packet creation
 	   String t="netascii";
-	   if(mode==1) {
-	   		t="netascii";
-	   }else if(mode==2) {
-		   t="octet";
-	   }
 	   byte[] filename = source.getBytes(), typeB=t.getBytes();
 	   if(type==2) {
 		   filename = dest.getBytes();
@@ -122,11 +116,9 @@ public class Client {
    //assumes the first block of received data is already in rcvData
    public void handleRead(String filename) {
 	   FileOutputStream fout=null;
-	   String folderStructure = "src/Main/";
 	   InetAddress serverAddress= receivePacket.getAddress();
 	   int serverPort=receivePacket.getPort();
-	   int i=0; 
-	   boolean done=false, shortened=false;
+	   boolean done=false;
 	   byte[] data= {};
 	   try {
 		   fout=new FileOutputStream(folderStructure+filename);
@@ -135,25 +127,22 @@ public class Client {
 		   System.exit(1);
 	   }
 	   while(!done) {
-		   byte[] raw=Arrays.copyOfRange(rcvData, 4,receivePacket.getLength());
+		   byte[] raw=Arrays.copyOfRange(rcvData, 4,rcvData.length);
 		   byte[] rawB=Arrays.copyOfRange(rcvData, 2, 4);
 		   int block= rawB[1]+(rawB[0]*16);
-		   
 		   if(raw.length<512) {
-			   System.out.println("done");
 			   if(data.length<(block-1)*512+raw.length) {
 				   data=Arrays.copyOf(data,(block-1)*512+raw.length);
-				   for(int j=(block-1)*512;j<(block-1)*512+raw.length;j+=1){
-					   data[j]=raw[j-(block-1)*512];
+				   for(int i=(block-1)*512;i<(block-1)*512+raw.length;i+=1){
+					   data[i]=raw[i-(block-1)*512];
 				   }
 			   }
 			   done=true;
 		   }else {
-			   System.out.println("not done");
 			   if(data.length<block*512) {
 				   data=Arrays.copyOf(data,block*512);
-				   for(int j=(block-1)*512;j<block*512;j+=1){
-					   data[j]=raw[j-(block-1)*512];
+				   for(int i=(block-1)*512;i<block*512;i+=1){
+					   data[i]=raw[i-(block-1)*512];
 				   }
 			   }
 		   }
@@ -166,16 +155,14 @@ public class Client {
 		   }
 		   if(!done) {
 			   try {
-				   rcvData= new byte[516];
-				   receivePacket=new DatagramPacket(rcvData,rcvData.length,serverAddress,serverPort);
 				   sockRS.receive(receivePacket);
 			   } catch (IOException e) {
 				   e.printStackTrace();
 				   System.exit(1);
 			   }
-			   
+			   System.out.println("Narp");
 			   System.out.println("Received (string): "+new String(rcvData));
-			   System.out.println("Received (byte): "+Arrays.toString(rcvData));
+			   System.out.println("Received (byte): "+Arrays.toString(receivePacket.getData()));
 		   }
 	   }
 	   try {
@@ -196,7 +183,6 @@ public class Client {
    
    public void handleWrite(String filename) {
 	   FileInputStream fin=null;
-	   String folderStructure = "src/Main/";
 	   InetAddress serverAddress= receivePacket.getAddress();
 	   int serverPort=receivePacket.getPort();
 	   byte[] data=new byte[(int) Math.pow(2,25)];
@@ -221,14 +207,12 @@ public class Client {
 		   System.err.println("File Specified Is Empty");
 	   }
 	   blocks=(data.length/512);
-	   if(blocks==0) {
-		   blocks=1;
+	   if(data.length%512!=0) {
+		   blocks+=1;
 	   }
 	   for(int i=0;i<blocks;i+=1) {
-		   for(int j=4;j<512;j+=1) {
-			   sendData[2]=(byte) ((blocks+1)/Math.pow(2,8));
-			   sendData[3]=(byte) ((blocks+1)%Math.pow(2,8));
-			   sendData[j]=data[j+i*512-4];
+		   for(int j=2;j<512;j+=1) {
+			   sendData[j]=data[j+i*512-2];
 		   }
 		   System.out.println("Sending(string): "+new String(sendData).trim()+" on port:"+sockRS.getLocalPort());
 		   System.out.println("Sending(byte): "+Arrays.toString(sendData));
@@ -254,69 +238,12 @@ public class Client {
    }
 
    public static void main(String args[])
-   {
-	  boolean run=true;
-	  String source="text1.txt";
-	  String destination="text2.txt";
-	  int mode=1,type=1;
-	  String input;
-	  Scanner s= new Scanner(System.in);
-	  
+   {	
+	  String f="text1.txt";
+	  String f2="text2.txt";
       Client c = new Client();
-      c.send(type,source,destination,mode);
-      type =2;
-      //c.send(type,source,destination,mode);
-      /*
-      while(run) {
-    	  System.out.println("1) Read Request \n2) Write Request\n3) Exit");
-    	  input=s.nextLine();
-    	  if(Integer.parseInt(input)==1){
-    		  type=1;
-    		  System.out.println("Enter filename of source for read");
-    		  source=s.nextLine();
-    		  System.out.println("Enter filename of destination for read");
-    		  destination=s.nextLine();
-    		  System.out.println("1) ASCII encoding \n2)Octet encoding");
-    		  input=s.nextLine();
-    		  if(Integer.parseInt(input)==1) {
-    			  mode=1;
-    		  }else if(Integer.parseInt(input)==2) {
-    			  mode=2;
-    		  }
-    		  System.out.println("Settings: Type(1-read,2-write):"+type+" Source: "+source+" Destination: "+destination+" Encoding(1-ASCII, 2-Octet): "+mode);
-    		  System.out.println("Settings ok? y/n");
-    		  input=s.nextLine();
-    		  if(input=="y") {
-    			  c.send(type,source,destination,mode);
-    		  }
-    	  }else if(Integer.parseInt(input)==2) {
-    		  type=2;
-    		  System.out.println("Enter filename of source for write");
-    		  source=s.nextLine();
-    		  System.out.println("Enter filename of destination for write");
-    		  destination=s.nextLine();
-    		  System.out.println("1) ASCII encoding \n2)Octet encoding");
-    		  input=s.nextLine();
-    		  if(Integer.parseInt(input)==1) {
-    			  mode=1;
-    		  }else if(Integer.parseInt(input)==2) {
-    			  mode=2;
-    		  }
-    		  System.out.println("Settings: Type(1-read,2-write):"+type+" Source: "+source+" Destination: "+destination+" Encoding(1-ASCII, 2-Octet): "+mode);
-    		  System.out.println("Settings ok? y/n");
-    		  input=s.nextLine();
-    		  System.out.println(input);
-    		  if(input=="y") {
-    			  c.send(type,source,destination,mode);
-    		  }else {
-    			  System.out.println("Re-enter settings");
-    		  }
-    	  }else if(Integer.parseInt(input)==3) {
-    		  run=false;
-    	  }
-    	  
-      }
-      */
+      c.send(1,f,f2);
+      //c.send(2,f,f2);
       System.exit(1);
    }
 }
