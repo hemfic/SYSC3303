@@ -200,7 +200,6 @@ public class ClientConnectionThread extends Thread{
 		    //DOWHILE read buffer, send, receive acknowledgment;
 		    while (rc==512) {
 		    	dataPacket = new DatagramPacket(data,516);
-			    ACKPacket = new DatagramPacket(ack,4,clientRequest.getAddress(),clientRequest.getPort());
 		    	sendRecieveSocket.receive(dataPacket);
 		    	dataBuffer.clear();
 		    	dataBuffer.put(Arrays.copyOfRange(dataPacket.getData(),4,dataPacket.getLength()));
@@ -224,10 +223,8 @@ public class ClientConnectionThread extends Thread{
 				}
 		    	rc = fileController.write(dataBuffer,block*512).get();
 		    	lock.release();
-		    	ACKPacket = new DatagramPacket(ack,4);
 		    	try {
-		    		sendRecieveSocket.send(dataPacket);
-		    		sendRecieveSocket.receive(ACKPacket);
+		    		sendRecieveSocket.send(ackPacket);
 		    	}catch(IOException e) {
 		    		System.out.println("ServerThread("+threadId+"): IOException while trying to send data packet");
 		    		e.printStackTrace();
