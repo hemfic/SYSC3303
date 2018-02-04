@@ -128,7 +128,8 @@ public class ClientConnectionThread extends Thread{
 		    	lock.release();
 		    	expectedACK[2] = (byte)((block+1) >> 8);
 		    	expectedACK[3] = (byte)(block+1);
-		    	dataPacket = new DatagramPacket(dataBuffer.array(),4+rc,clientRequest.getAddress(),clientRequest.getPort());
+		    	System.out.println(Arrays.copyOfRange(dataBuffer.array(), 0, rc+4));
+		    	dataPacket = new DatagramPacket(Arrays.copyOfRange(dataBuffer.array(), 0, rc+4),4+rc,clientRequest.getAddress(),clientRequest.getPort());
 		    	byte[] ack = new byte[4];
 		    	ACKPacket = new DatagramPacket(ack,4);
 		    	try {
@@ -139,8 +140,11 @@ public class ClientConnectionThread extends Thread{
 		    		e.printStackTrace();
 		    	}
 		    	//If ACKPacket is as expected then move to the next block, else assume loss and repeat?
-		    	if(Arrays.equals(ack,expectedACK)) ++block;
-		    	else {
+		    	if(Arrays.equals(ack,expectedACK)) {
+		    		++block;
+		    		System.out.println("ServerThread("+threadId+"): rc = "+rc);
+		    		System.out.println("ServerThread("+threadId+"): Acknowledgement Recieved");
+		    	}else {
 		    		rc =512;
 		    		System.out.println("Unexpected packet recieved");
 		    		System.out.println("Non-optimal package order not protected for");
