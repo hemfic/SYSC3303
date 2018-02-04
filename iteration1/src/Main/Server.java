@@ -5,6 +5,7 @@ public class Server {
 	DatagramSocket receiveSocket;
 	DatagramPacket receivePacket;
 	
+	BufferedReader consoleResponse;
 	Thread serverConsoleThread;
 	ThreadGroup allResponseThreads;
 	int num;
@@ -13,7 +14,22 @@ public class Server {
 		//Create console monitor
 		verbose = v;
 		num = 1;
-		System.out.println("Launching server. Verbose mode is: "+verbose);
+		consoleResponse = new BufferedReader(new InputStreamReader(System.in));
+		while(true) {
+			System.out.printf("Launching server. Verbose mode is: ");
+			try {
+				String input = consoleResponse.readLine();
+			
+			input.toLowerCase();
+			if(input.equals("true")||input.equals("t")) {
+				verbose = true;
+				break;
+			}else if(input.equals("false")||input.equals("f")) {
+				verbose = false;
+				break;
+			}
+			}catch(Exception e) {}
+		}
 		//create thread group for all client response threads
 		
 		allResponseThreads = new ThreadGroup("Response Threads");
