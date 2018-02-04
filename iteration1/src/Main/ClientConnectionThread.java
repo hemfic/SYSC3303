@@ -21,18 +21,21 @@ public class ClientConnectionThread extends Thread{
 	ByteBuffer dataBuffer;
 	ByteBuffer errorBuffer;
 	
-	public ClientConnectionThread(DatagramPacket request,int id) {
+	boolean verbose;
+	
+	public ClientConnectionThread(DatagramPacket request,int id, boolean v) {
 		threadId = id;
+		verbose = v;
 		try {
 			sendRecieveSocket = new DatagramSocket();
 		}catch(SocketException e) {
-			System.out.println("ServerThread("+threadId+"): An error occured while trying to create a socket for client connection.");
+			printMessage("An error occured while trying to create a socket for client connection.");
 			try {
 				sendRecieveSocket = new DatagramSocket();
-				System.out.println("ServerThread("+threadId+"): New socket "+sendRecieveSocket.getLocalSocketAddress());
+				printMessage("New socket "+sendRecieveSocket.getLocalSocketAddress());
 			}catch(SocketException se) {
-				System.out.println("ServerThread("+threadId+"): Second try to create socket failed. Closing thread");
-				System.out.println(se.getCause());
+				printMessage("Second try to create socket failed. Closing thread");
+				printMessage(se.getCause());
 				System.exit(-1);
 			}
 		}
@@ -81,7 +84,7 @@ public class ClientConnectionThread extends Thread{
 	private int respondRead(String fName,String method) {
 		//Confirm file
 		File file = new File(serverFiles,fName);
-		System.out.println("ServerThread("+threadId+"): "+file.toString());
+		printMessage(file.toString());
 		if(!file.getAbsoluteFile().exists()) return respondError("File does not exist",1);
 		if(!file.getAbsoluteFile().canRead()) return respondError("File cannot be read",1);
 		if(file.getAbsoluteFile().length()>33554432) return respondError("File is too long for transfer",3);
@@ -117,10 +120,10 @@ public class ClientConnectionThread extends Thread{
 					}catch(NonReadableChannelException e) {
 						return respondError("Cannot read from file",1);
 					}catch(IllegalArgumentException e) {
-						System.out.println("ServerThread("+threadId+"): "+e.getCause());
+						printMessage(e.getCause());
 						return respondError("Illegal Argument",5);
 					}catch(Exception e) {
-						System.out.println("ServerThread("+threadId+"): "+e.getCause());
+						printMessage(e.getCause());
 						e.printStackTrace();
 					}
 				}
@@ -128,7 +131,6 @@ public class ClientConnectionThread extends Thread{
 		    	lock.release();
 		    	expectedACK[2] = (byte)((block+1) >> 8);
 		    	expectedACK[3] = (byte)(block+1);
-		    	System.out.println(Arrays.copyOfRange(dataBuffer.array(), 0, rc+4));
 		    	dataPacket = new DatagramPacket(Arrays.copyOfRange(dataBuffer.array(), 0, rc+4),4+rc,clientRequest.getAddress(),clientRequest.getPort());
 		    	byte[] ack = new byte[4];
 		    	ACKPacket = new DatagramPacket(ack,4);
@@ -136,24 +138,24 @@ public class ClientConnectionThread extends Thread{
 		    		sendRecieveSocket.send(dataPacket);
 		    		sendRecieveSocket.receive(ACKPacket);
 		    	}catch(IOException e) {
-		    		System.out.println("IOException while trying to send data packet");
+		    		printMessage("IOException while trying to send data packet");
 		    		e.printStackTrace();
 		    	}
 		    	//If ACKPacket is as expected then move to the next block, else assume loss and repeat?
 		    	if(Arrays.equals(ack,expectedACK)) {
 		    		++block;
-		    		System.out.println("ServerThread("+threadId+"): rc = "+rc);
-		    		System.out.println("ServerThread("+threadId+"): Acknowledgement Recieved");
+		    		printMessage("rc = "+rc);
+		    		printMessage("Acknowledgement Recieved");
 		    	}else {
 		    		rc =512;
-		    		System.out.println("Unexpected packet recieved");
-		    		System.out.println("Non-optimal package order not protected for");
+		    		printMessage("Unexpected packet recieved");
+		    		printMessage("Non-optimal package order not protected for");
 		    	}
 		    }
 		    fileController.close();
 		    return 1;
 		} catch (IOException e) {
-		    System.out.println("An error most likely occured with the buffer");
+			printMessage("An error most likely occured with the buffer");
 		    e.printStackTrace();
 		    try{
 		    	fileController.close();
@@ -173,7 +175,7 @@ public class ClientConnectionThread extends Thread{
 	private int respondWrite(String fName,String method) {
 		//Check file
 		File file = new File(serverFiles,fName);
-		System.out.println(file.getAbsolutePath());
+		printMessage(file.getAbsolutePath());
 		//Acquire file lock
 		try {		
 			if(!file.getAbsoluteFile().createNewFile()) {
@@ -181,7 +183,7 @@ public class ClientConnectionThread extends Thread{
 			}
 			fileController = AsynchronousFileChannel.open(file.toPath(),StandardOpenOption.WRITE);
 			FileLock lock;
-			dataBuffer = ByteBuffer.allocate(516);
+			dataBuffer = ByteBuffer.allocate(512);
 	    	dataBuffer.putShort((short)3);
 	    	//block
 	    	int block = 0;
@@ -201,8 +203,8 @@ public class ClientConnectionThread extends Thread{
 		    while (rc==512) {
 		    	dataPacket = new DatagramPacket(data,516);
 		    	sendRecieveSocket.receive(dataPacket);
-		    	dataBuffer.clear();
-		    	dataBuffer.put(Arrays.copyOfRange(dataPacket.getData(),4,dataPacket.getLength()));
+		    	dataBuffer.allocate(512);
+		    	dataBuffer.put(Arrays.copyOfRange(data,4,dataPacket.getLength()));
 		    	block = data[2]<<8;
 		    	block += data[3];
 		    	ack[2] = data[2];
@@ -214,46 +216,51 @@ public class ClientConnectionThread extends Thread{
 					}catch(NonWritableChannelException e) {
 						return respondError("Cannot read from file",1);
 					}catch(IllegalArgumentException e) {
-						System.out.println("ServerThread("+threadId+"): "+e.getCause());
+						printMessage(e.getCause());
 						return respondError("Illegal Argument",5);
 					}catch(Exception e) {
-						System.out.println("ServerThread("+threadId+"): "+e.getCause());
+						printMessage(e.getCause());
 						e.printStackTrace();
 					}
 				}
-		    	rc = fileController.write(dataBuffer,block*512).get();
+		    	fileController.write(dataBuffer,block*512).get();
 		    	lock.release();
 		    	try {
 		    		sendRecieveSocket.send(ackPacket);
 		    	}catch(IOException e) {
-		    		System.out.println("ServerThread("+threadId+"): IOException while trying to send data packet");
+		    		printMessage("IOException while trying to send data packet");
 		    		e.printStackTrace();
 		    	}
 		    }
 		    fileController.close();
 		    return 2;
 		} catch (IOException | InterruptedException | ExecutionException e) {
-		    System.out.println(e.getCause());
+			printMessage("e.getCause());
 		    e.printStackTrace();
 		}
 		return 0;
 	}
 	private int respondError(String errorMsg,int errorCode) {
-		System.out.println("ServerThread("+threadId+"): AN ERROR OCCURRED: "+errorMsg);
+		printMessage("AN ERROR OCCURRED: "+errorMsg);
 		//(2)05 |  (02)ErrorCode |   ? ErrMsg   |  (1) 0
 		byte[] errorArray = errorMsg.getBytes();
 		errorBuffer = ByteBuffer.allocate((errorArray.length+5));
 		errorBuffer.putShort((short)5).putShort((short)errorCode).put(errorArray).put((byte)0);
-		System.out.printf("ServerThread("+threadId+"): Sending error packet to: %s %d%n",clientRequest.getAddress(),clientRequest.getPort());
+		printMessage("Sending error packet to: %s %d%n",clientRequest.getAddress(),clientRequest.getPort());
 		dataPacket = new DatagramPacket(errorBuffer.array(),errorBuffer.position(),clientRequest.getAddress(),clientRequest.getPort());
 		try {
 			sendRecieveSocket.send(dataPacket);
-			System.out.println("ServerThread("+threadId+"): error packet sent");
+			printMessage("error packet sent");
 			return 5;
 		}catch(IOException e) {
-			System.out.println("ServerThread("+threadId+"): An error occurred while tring to send an error report. Ironic");
+			printMessage("An error occurred while tring to send an error report. Ironic")
 			e.printStackTrace();
 			return -1;
+		}
+	}
+	private void printMessage(String out) {
+		if(verbose) {
+			System.out.println("ServerThread("+threadId+"): "+out);
 		}
 	}
 }

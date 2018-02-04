@@ -8,14 +8,17 @@ public class Server {
 	Thread serverConsoleThread;
 	ThreadGroup allResponseThreads;
 	int num;
-	public Server() {
+	public boolean verbose;
+	public Server(boolean v) {
 		//Create console monitor
+		verbose = v;
 		num = 1;
-		serverConsoleThread = new Thread(new ServerConsoleThread());
-		serverConsoleThread.start();
+		System.out.println("Launching server. Verbose mode is: "+verbose);
 		//create thread group for all client response threads
 		
 		allResponseThreads = new ThreadGroup("Response Threads");
+		serverConsoleThread = new Thread(new ServerConsoleThread());
+		serverConsoleThread.start();
 		try {
 			receiveSocket = new DatagramSocket(69);
 		}catch(SocketException se) {
@@ -32,7 +35,7 @@ public class Server {
 				receiveSocket.receive(receivePacket);
 				System.out.println("Server: data received -- "+ receivePacket.getData().toString());
 				System.out.println("Server: rough decription -- "+new String(receivePacket.getData()));
-				Thread clientResponseThread = new Thread(allResponseThreads,new ClientConnectionThread(receivePacket,num));
+				Thread clientResponseThread = new Thread(allResponseThreads,new ClientConnectionThread(receivePacket,num,verbose));
 				++num;
 				clientResponseThread.start();
 				if(!serverConsoleThread.isAlive()) {
@@ -51,6 +54,6 @@ public class Server {
 		}
 	}
 	public static void main(String args[]) {
-		new Server();
+		new Server(true);
 	}
 }
