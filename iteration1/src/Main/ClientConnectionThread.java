@@ -78,14 +78,16 @@ public class ClientConnectionThread extends Thread{
 	}
 	private int respondRead(String fName,String method) {
 		//Confirm file
-		File file = new File(fName);
-		if(!file.canRead()) return respondError("File either does not exist or cannot be read",1);
+		File file = new File("ServerFiles/"+fName);
+		System.out.println(file.toString());
+		if(!file.exists()) return respondError("File does not exist",1);
+		if(!file.canRead()) return respondError("File cannot be read",1);
 		if(file.length()>33554432) return respondError("File is too long for transfer",3);
 
 		//Acquire file lock
 		try {
 			fileController = AsynchronousFileChannel.open(file.toPath(),StandardOpenOption.READ);
-			//yes this line is a little hack-y, but its the only way to prevent Execution Exception
+
 			
 		    int block = 0;
 
@@ -135,8 +137,9 @@ public class ClientConnectionThread extends Thread{
 		    		e.printStackTrace();
 		    	}
 		    	//If ACKPacket is as expected then move to the next block, else assume loss and repeat?
-		    	if(ACKPacket.getData().equals(expectedACK)) ++block;
+		    	if(ACKPacket.getData()[2] == expectedACK[2]&& ACKPacket.getData()[3]==expectedACK[3]) ++block;
 		    	else {
+		    		rc =512;
 		    		System.out.println("Unexpected packet recieved");
 		    		System.out.println("Non-optimal package order not protected for");
 		    	}
@@ -163,8 +166,8 @@ public class ClientConnectionThread extends Thread{
 	}
 	private int respondWrite(String fName,String method) {
 		//Check file
-		File file =new  File(fName);
-
+		File file = new File("ServerFiles/"+fName);
+		System.out.println(file.getName());
 		//Acquire file lock
 		try {		
 			if(!file.createNewFile()) {
@@ -178,7 +181,6 @@ public class ClientConnectionThread extends Thread{
 	    	int block = 0;
 	    	//data
 		    byte[] data = new byte[516];
-	    	
 	    	++block;
 		    int rc = 512;
 		    //prepare ACK code in advance
