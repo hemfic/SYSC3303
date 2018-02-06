@@ -35,7 +35,7 @@ public class ClientConnectionThread extends Thread{
 				printMessage("New socket "+sendRecieveSocket.getLocalSocketAddress());
 			}catch(SocketException se) {
 				printMessage("Second try to create socket failed. Closing thread");
-				printMessage(se.getCause());
+				printMessage(se.getCause().toString());
 				System.exit(-1);
 			}
 		}
@@ -120,10 +120,10 @@ public class ClientConnectionThread extends Thread{
 					}catch(NonReadableChannelException e) {
 						return respondError("Cannot read from file",1);
 					}catch(IllegalArgumentException e) {
-						printMessage(e.getCause());
+						printMessage(e.getCause().toString());
 						return respondError("Illegal Argument",5);
 					}catch(Exception e) {
-						printMessage(e.getCause());
+						printMessage(e.getCause().toString());
 						e.printStackTrace();
 					}
 				}
@@ -216,10 +216,10 @@ public class ClientConnectionThread extends Thread{
 					}catch(NonWritableChannelException e) {
 						return respondError("Cannot read from file",1);
 					}catch(IllegalArgumentException e) {
-						printMessage(e.getCause());
+						printMessage(e.getCause().toString());
 						return respondError("Illegal Argument",5);
 					}catch(Exception e) {
-						printMessage(e.getCause());
+						printMessage(e.getCause().toString());
 						e.printStackTrace();
 					}
 				}
@@ -235,7 +235,7 @@ public class ClientConnectionThread extends Thread{
 		    fileController.close();
 		    return 2;
 		} catch (IOException | InterruptedException | ExecutionException e) {
-			printMessage("e.getCause());
+			printMessage(e.getCause().toString());
 		    e.printStackTrace();
 		}
 		return 0;
@@ -246,14 +246,14 @@ public class ClientConnectionThread extends Thread{
 		byte[] errorArray = errorMsg.getBytes();
 		errorBuffer = ByteBuffer.allocate((errorArray.length+5));
 		errorBuffer.putShort((short)5).putShort((short)errorCode).put(errorArray).put((byte)0);
-		printMessage("Sending error packet to: %s %d%n",clientRequest.getAddress(),clientRequest.getPort());
+		printMessage("Sending error packet to: "+ clientRequest.getAddress()+clientRequest.getPort());
 		dataPacket = new DatagramPacket(errorBuffer.array(),errorBuffer.position(),clientRequest.getAddress(),clientRequest.getPort());
 		try {
 			sendRecieveSocket.send(dataPacket);
 			printMessage("error packet sent");
 			return 5;
 		}catch(IOException e) {
-			printMessage("An error occurred while tring to send an error report. Ironic")
+			printMessage("An error occurred while tring to send an error report. Ironic");
 			e.printStackTrace();
 			return -1;
 		}

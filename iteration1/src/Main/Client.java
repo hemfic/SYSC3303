@@ -264,7 +264,7 @@ public class Client {
 	  
       Client c = new Client();
       c.send(type,source,destination,mode);
-      type =2;
+      //type =2;
       //c.send(type,source,destination,mode);
       /*
       while(run) {
@@ -286,6 +286,8 @@ public class Client {
     		  System.out.println("Settings: Type(1-read,2-write):"+type+" Source: "+source+" Destination: "+destination+" Encoding(1-ASCII, 2-Octet): "+mode);
     		  System.out.println("Settings ok? y/n");
     		  input=s.nextLine();
+    		  System.out.println(
+    				  );
     		  if(input=="y") {
     			  c.send(type,source,destination,mode);
     		  }
