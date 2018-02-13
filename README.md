@@ -27,9 +27,9 @@ ServerConsoleThread.java: polls for user input. When exit code is confirmed, sys
 
 
 Diagrams:
-UML
-UCM_ReadRequest
-UCM_WriteRequest
+* UML
+* UCM_ReadRequest
+* UCM_WriteRequest
 
 
 
@@ -40,10 +40,11 @@ Sarah Elizabeth "Liz" Davies  -- 100828244 -- SarahDavies4@cmail.carleton.ca
 Eric Reesor - 1000970401 - ericreesor@cmail.carleton.ca
   Assignment for iteration 1: Client
   
-Melissa Seaman - 100939062 - melissaseaman@cmail.carleton.ca
-  Assignment for iteration 1: User Interface
-
 Thomas Carriere - 100947281 - thomasdehaancarriere@cmail.carleton.ca
   Assignment for iteration 1: Diagrams
+  
+Melissa Seaman (MIA) - 100939062 - melissaseaman@cmail.carleton.ca
+  Assignment for iteration 1: User Interface.
+  
 TFTP - RFC1350 documentation
 https://tools.ietf.org/html/rfc1350
