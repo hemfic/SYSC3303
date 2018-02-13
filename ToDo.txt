@@ -1,22 +1,5 @@
 To-Do
 
-Client
--Modes(Normal, Test)
--WriteRequest
-
-Server
--Finish Quiet, Verbose Mode
--WriteRequest
-
-Diagrams/Documents
--Timing Diagrams
--ReadMe
--UML
-
-Other
--I/O Test Suite
-
-
 Thomas
 -Modes(Normal, Test)
 -WriteRequest
