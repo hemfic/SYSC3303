@@ -85,7 +85,6 @@ public class ClientConnectionThread extends Thread{
 		//Confirm file
 		File file = new File(serverFiles,fName);
 		printMessage(file.toString());
-		if(!file.getAbsoluteFile().exists()) return respondError("File does not exist",1);
 		if(file.getAbsoluteFile().length()>33554432) return respondError("File is too long for transfer",3);
 
 		//Acquire file lock
@@ -153,6 +152,8 @@ public class ClientConnectionThread extends Thread{
 		    }
 		    fileController.close();
 		    return 1;
+		} catch (NoSuchFileException e) {
+			return respondError("File does not exist",1);
 		} catch (AccessDeniedException e) { 
 			return respondError("File cannot be read",2);
 		} catch (IOException e) {
