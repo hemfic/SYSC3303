@@ -14,34 +14,11 @@ public class Server {
 		//Create console monitor
 		verbose = v;
 		num = 1;
-		consoleResponse = new BufferedReader(new InputStreamReader(System.in));
-		while(true) {
-			System.out.printf("Launching server. Verbose mode is: ");
-			try {
-				String input = consoleResponse.readLine();
-			
-			input.toLowerCase();
-			if(input.equals("true")||input.equals("t")) {
-				verbose = true;
-				break;
-			}else if(input.equals("false")||input.equals("f")) {
-				verbose = false;
-				break;
-			}
-			}catch(Exception e) {}
-		}
 		//create thread group for all client response threads
-		
 		allResponseThreads = new ThreadGroup("Response Threads");
-		serverConsoleThread = new Thread(new ServerConsoleThread());
-		serverConsoleThread.start();
-		try {
-			receiveSocket = new DatagramSocket(69);
-		}catch(SocketException se) {
-			System.out.println("Server: Unable to create socket"); 
-			se.printStackTrace();
-	        System.exit(1);
-		}
+	}
+	
+	public void createClientThread() {
 		try {
 			//receive until Server console returns;
 			while(true) {
@@ -69,7 +46,42 @@ public class Server {
 	         System.exit(1);
 		}
 	}
+	
+	public void consoleThreadUI() {
+		serverConsoleThread = new Thread(new ServerConsoleThread());
+		serverConsoleThread.start();
+		try {
+			receiveSocket = new DatagramSocket(69);
+		}catch(SocketException se) {
+			System.out.println("Server: Unable to create socket"); 
+			se.printStackTrace();
+	        System.exit(1);
+		}
+	}
+	
+	public void verboseUI() {
+		consoleResponse = new BufferedReader(new InputStreamReader(System.in));
+		while(true) {
+			System.out.printf("Launching server. Verbose mode is: ");
+			try {
+				String input = consoleResponse.readLine();
+			
+			input.toLowerCase();
+			if(input.equals("true")||input.equals("t")) {
+				verbose = true;
+				break;
+			}else if(input.equals("false")||input.equals("f")) {
+				verbose = false;
+				break;
+			}
+			}catch(Exception e) {}
+		}
+	}
+	
 	public static void main(String args[]) {
-		new Server(true);
+		Server server = new Server(true);
+		server.verboseUI();
+		server.consoleThreadUI();
+		server.createClientThread();
 	}
 }
