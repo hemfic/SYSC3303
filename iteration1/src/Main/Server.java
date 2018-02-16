@@ -2,6 +2,7 @@ package Main;
 import java.io.*;
 import java.net.*;
 public class Server {
+	
 	DatagramSocket receiveSocket;
 	DatagramPacket receivePacket;
 	
@@ -19,6 +20,13 @@ public class Server {
 	}
 	
 	public void createClientThread() {
+		try {
+			receiveSocket = new DatagramSocket(69);
+		}catch(SocketException se) {
+			System.out.println("Server: Unable to create socket"); 
+			se.printStackTrace();
+	        System.exit(1);
+		}
 		try {
 			//receive until Server console returns;
 			while(true) {
@@ -46,17 +54,10 @@ public class Server {
 	         System.exit(1);
 		}
 	}
-	
 	public void consoleThreadUI() {
 		serverConsoleThread = new Thread(new ServerConsoleThread());
 		serverConsoleThread.start();
-		try {
-			receiveSocket = new DatagramSocket(69);
-		}catch(SocketException se) {
-			System.out.println("Server: Unable to create socket"); 
-			se.printStackTrace();
-	        System.exit(1);
-		}
+		
 	}
 	
 	public void verboseUI() {
@@ -84,4 +85,5 @@ public class Server {
 		server.consoleThreadUI();
 		server.createClientThread();
 	}
+	
 }
