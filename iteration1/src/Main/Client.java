@@ -314,7 +314,7 @@ public class Client {
     	  System.out.println("1) Read Request \n2) Write Request\n3) Exit");
     	  input=s.nextLine();
     	  requestType = Integer.parseInt(input);
-    	  if(requestType!=1 || requestType!=2) break;
+    	  if(requestType!=1 && requestType!=2) break;
     	  System.out.println("Enter filename of source for read");
     	  source = s.nextLine();
     	  System.out.println("Enter filename of destination for read");
@@ -341,8 +341,7 @@ public class Client {
     	  if(input.equalsIgnoreCase("y")) {
     		  c.send(requestType,source,destination,encodeMode,operMode);
     	  }
-    	  s.close();
-	  }
+    	}
       System.exit(1);
    }
 }
