@@ -163,7 +163,7 @@ public class Client {
    //assumes the first block of received data is already in rcvData
    public void handleRead(String filename) {
 	   FileOutputStream fout=null;
-	   String folderStructure = "src/Main/";
+	   String folderStructure = "src/Main/ClientFiles/";
 	   InetAddress serverAddress= receivePacket.getAddress();
 	   int serverPort=receivePacket.getPort();
 	   int i=0; 
@@ -242,7 +242,7 @@ public class Client {
    
    public void handleWrite(String filename) {
 	   FileInputStream fin=null;
-	   String folderStructure = "src/Main/";
+	   String folderStructure = "src/Main/ClientFiles/";
 	   InetAddress serverAddress= receivePacket.getAddress();
 	   int serverPort=receivePacket.getPort();
 	   byte[] data=new byte[(int) Math.pow(2,25)];
