@@ -30,6 +30,7 @@ public class Client {
    private DatagramPacket sendPacket, receivePacket;
    private DatagramSocket sockRS;
    private byte[] rcvData; 						//buffer for receiving data
+   private final int HOSTPORT = 23, SERVERPORT = 69;
 
    public Client() {
 	   rcvData=new byte[516]; 			
@@ -43,12 +44,13 @@ public class Client {
 	   }
    }
    
-   public void send(int type, String source,String dest,int mode) {
+   public void send(int type, String source,String dest,int encodeMode, int operMode) {
 	   int index=2;	//offset for packet creation
+	   int sendPort = SERVERPORT; 
 	   String t="netascii";
-	   if(mode==1) {
+	   if(encodeMode==1) {
 	   		t="netascii";
-	   }else if(mode==2) {
+	   }else if(encodeMode==2) {
 		   t="octet";
 	   }
 	   byte[] filename = source.getBytes(), typeB=t.getBytes();
@@ -57,6 +59,12 @@ public class Client {
 	   }
 	   byte[] sendData=new byte[4+filename.length+typeB.length]; 	//buffer for sending data
 	   
+	   //set sendingPort depending on Operating Mode(Normal/Test)
+	   if(operMode==1) {
+		   sendPort = SERVERPORT;
+	   }else if(operMode==2) {
+		   sendPort = HOSTPORT;
+	   }
 	
 	   if(type==1) {				// Read request
 		   sendData[0]=0;
@@ -80,7 +88,7 @@ public class Client {
 	   System.out.println("Sending(byte): "+Arrays.toString(sendData));
 	   
 	   try {
-		   sendPacket=new DatagramPacket(sendData, sendData.length,InetAddress.getLocalHost() , 23);
+		   sendPacket=new DatagramPacket(sendData, sendData.length,InetAddress.getLocalHost() , sendPort);
 		   sockRS.send(sendPacket);		//load packet and send
 	   } catch (Exception e) {
 		   e.printStackTrace();
@@ -95,12 +103,45 @@ public class Client {
 	   }
 	   System.out.println("Received (string): "+new String(rcvData));
 	   System.out.println("Received (byte): "+Arrays.toString(rcvData));
+	   
+	   //check if we received an error packet. All packets, for now, are non-recoverable
+	   if(rcvData[0]==0&&rcvData[1]==5) {
+		   handleError();
+		}
+	   
 	   if(rcvData[0]==0&&rcvData[1]==3) {
 		   handleRead(dest);
 	   }
 	   if(rcvData[0]==0&&rcvData[1]==4) {
 		   handleWrite(source);
 	   }
+	   
+   }
+   
+   public void handleError() {
+		System.out.println("ERROR TYPE " + rcvData[3] + " received.");
+		
+		byte[] errorMessage = Arrays.copyOfRange(rcvData, 4,receivePacket.getLength());
+		System.out.println("Error Message: " + new String(errorMessage));
+		System.out.println("Terminating Request");
+		System.exit(1);
+
+		/*
+		//File Not Found Error. During RRQ, the Server couldn't find the file.
+		if(errorType == 1) {
+			//kill the process
+		}
+		
+		//Access Violation. During RRQ, don't have permissions to read file
+		if(errorType == 2) {
+			//kill the process.
+			//maybe in the future, let the client retry with a different file.
+		}
+		//File Already Exists. During WRQ, file to write to already exists.
+		if(errorType == 6) {
+			//acknowledge the error, but return
+		}
+		*/
    }
    
    public DatagramPacket buildAck(int block,InetAddress address,int port) {
@@ -169,6 +210,11 @@ public class Client {
 				   rcvData= new byte[516];
 				   receivePacket=new DatagramPacket(rcvData,rcvData.length,serverAddress,serverPort);
 				   sockRS.receive(receivePacket);
+				   
+				   if(rcvData[0]==0&&rcvData[1]==5) {
+					  handleError();
+				   }
+				   
 			   } catch (IOException e) {
 				   e.printStackTrace();
 				   System.exit(1);
@@ -215,10 +261,6 @@ public class Client {
 		   size=fin.read(data);
 	   } catch (IOException e) {
 		   e.printStackTrace();
-		   System.exit(1);
-	   }
-	   if(size==-1) {
-		   System.err.println("File Specified Is Empty");
 	   }
 	   blocks=(data.length/512);
 	   if(blocks==0) {
@@ -242,6 +284,10 @@ public class Client {
 		   try {
 			   sockRS.receive(receivePacket);
 			   
+			   if(rcvData[0]==0&&rcvData[1]==5) {
+			      handleError();
+		       }
+			   
 		   } catch (IOException e) {
 			   e.printStackTrace();
 			   System.exit(1);
@@ -256,69 +302,48 @@ public class Client {
    public static void main(String args[])
    {
 	  boolean run=true;
-	  String source="text1.txt";
-	  String destination="text2.txt";
-	  int mode=1,type=1;
+	  String source="";
+	  String destination="1";
+	  int encodeMode=1,requestType=1, operMode=2;
 	  String input;
 	  Scanner s= new Scanner(System.in);
 	  
       Client c = new Client();
-      c.send(type,source,destination,mode);
-      //type =2;
-      //c.send(type,source,destination,mode);
-      /*
+      //c.send(requestType,source,destination,encodeMode, operMode);
+      
       while(run) {
     	  System.out.println("1) Read Request \n2) Write Request\n3) Exit");
     	  input=s.nextLine();
-    	  if(Integer.parseInt(input)==1){
-    		  type=1;
-    		  System.out.println("Enter filename of source for read");
-    		  source=s.nextLine();
-    		  System.out.println("Enter filename of destination for read");
-    		  destination=s.nextLine();
-    		  System.out.println("1) ASCII encoding \n2)Octet encoding");
-    		  input=s.nextLine();
-    		  if(Integer.parseInt(input)==1) {
-    			  mode=1;
-    		  }else if(Integer.parseInt(input)==2) {
-    			  mode=2;
-    		  }
-    		  System.out.println("Settings: Type(1-read,2-write):"+type+" Source: "+source+" Destination: "+destination+" Encoding(1-ASCII, 2-Octet): "+mode);
-    		  System.out.println("Settings ok? y/n");
-    		  input=s.nextLine();
-    		  System.out.println(
-    				  );
-    		  if(input=="y") {
-    			  c.send(type,source,destination,mode);
-    		  }
-    	  }else if(Integer.parseInt(input)==2) {
-    		  type=2;
-    		  System.out.println("Enter filename of source for write");
-    		  source=s.nextLine();
-    		  System.out.println("Enter filename of destination for write");
-    		  destination=s.nextLine();
-    		  System.out.println("1) ASCII encoding \n2)Octet encoding");
-    		  input=s.nextLine();
-    		  if(Integer.parseInt(input)==1) {
-    			  mode=1;
-    		  }else if(Integer.parseInt(input)==2) {
-    			  mode=2;
-    		  }
-    		  System.out.println("Settings: Type(1-read,2-write):"+type+" Source: "+source+" Destination: "+destination+" Encoding(1-ASCII, 2-Octet): "+mode);
-    		  System.out.println("Settings ok? y/n");
-    		  input=s.nextLine();
-    		  System.out.println(input);
-    		  if(input=="y") {
-    			  c.send(type,source,destination,mode);
-    		  }else {
-    			  System.out.println("Re-enter settings");
-    		  }
-    	  }else if(Integer.parseInt(input)==3) {
-    		  run=false;
+    	  requestType = Integer.parseInt(input);
+    	  if(requestType!=1 || requestType!=2) run = false;
+    	  System.out.println("Enter filename of source for read");
+    	  source = s.nextLine();
+    	  System.out.println("Enter filename of destination for read");
+      	  destination = s.nextLine();
+      	  System.out.println("1) ASCII encoding \n2)Octet encoding");
+   	  	  input = s.nextLine();
+   	      encodeMode = Integer.parseInt(input);
+   	  	  while(encodeMode!= 1 && encodeMode!=2){
+   	  		  System.out.println("1) ASCII encoding \n2)Octet encoding");
+   	  		  input = s.nextLine();
+   	  		  encodeMode = Integer.parseInt(input);
+	 	  }
+   	  	  System.out.println("1) Normal Mode \n2) Test Mode");
+   	  	  input = s.nextLine();
+   	  	  operMode = Integer.parseInt(input);
+   	  	  while(operMode!= 1 && operMode!=2){
+   	  		  System.out.println("1) Normal Mode \n2) Test Mode");
+   	  		  input = s.nextLine();
+   	  		  operMode = Integer.parseInt(input);
+   	  	  }
+   	  	  System.out.println("Settings: Type(1-read,2-write):"+requestType+" Source: "+source+" Destination: "+destination+" Encoding(1-ASCII, 2-Octet): "+encodeMode +  "OperatingMode(1-Normal, 2-Test): " + operMode);
+   	  	  System.out.println("Settings ok? y/n");
+   	  	  input = s.nextLine();
+    	  if(input.equalsIgnoreCase("y")) {
+    		  c.send(requestType,source,destination,encodeMode,operMode);
     	  }
-    	  
-      }
-      */
+    	  s.close();
+	  }
       System.exit(1);
    }
 }
