@@ -44,15 +44,11 @@ public class Client {
 	   }
    }
    
-   public void send(int type, String source,String dest,int encodeMode, int operMode) {
+   public void send(int type, String source,String dest, int operMode) {
 	   int index=2;	//offset for packet creation
 	   int sendPort = SERVERPORT; 
 	   String t="netascii";
-	   if(encodeMode==1) {
-	   		t="netascii";
-	   }else if(encodeMode==2) {
-		   t="octet";
-	   }
+	   
 	   byte[] filename = source.getBytes(), typeB=t.getBytes();
 	   if(type==2) {
 		   filename = dest.getBytes();
@@ -303,14 +299,15 @@ public class Client {
    {
 	  String source="";
 	  String destination="1";
-	  int encodeMode=1,requestType=1, operMode=2;
+	  int requestType=1, operMode=2;
 	  String input;
 	  Scanner s= new Scanner(System.in);
 	  
-      Client c = new Client();
+      //Client c = new Client();
       //c.send(requestType,source,destination,encodeMode, operMode);
       
       while(true) {
+    	  Client c = new Client();
     	  System.out.println("1) Read Request \n2) Write Request\n3) Exit");
     	  input=s.nextLine();
     	  requestType = Integer.parseInt(input);
@@ -319,15 +316,7 @@ public class Client {
     	  source = s.nextLine();
     	  System.out.println("Enter filename of destination for read");
       	  destination = s.nextLine();
-      	  System.out.println("1) ASCII encoding \n2)Octet encoding");
-   	  	  input = s.nextLine();
-   	      encodeMode = Integer.parseInt(input);
-   	  	  while(encodeMode!= 1 && encodeMode!=2){
-   	  		  System.out.println("1) ASCII encoding \n2)Octet encoding");
-   	  		  input = s.nextLine();
-   	  		  encodeMode = Integer.parseInt(input);
-	 	  }
-   	  	  System.out.println("1) Normal Mode \n2) Test Mode");
+      	  System.out.println("1) Normal Mode \n2) Test Mode");
    	  	  input = s.nextLine();
    	  	  operMode = Integer.parseInt(input);
    	  	  while(operMode!= 1 && operMode!=2){
@@ -335,13 +324,14 @@ public class Client {
    	  		  input = s.nextLine();
    	  		  operMode = Integer.parseInt(input);
    	  	  }
-   	  	  System.out.println("Settings: Type(1-read,2-write):"+requestType+" Source: "+source+" Destination: "+destination+" Encoding(1-ASCII, 2-Octet): "+encodeMode +  "OperatingMode(1-Normal, 2-Test): " + operMode);
+   	  	  System.out.println("Settings: Type(1-read,2-write):"+requestType+" Source: "+source+" Destination: "+destination + " OperatingMode(1-Normal, 2-Test): " + operMode);
    	  	  System.out.println("Settings ok? y/n");
    	  	  input = s.nextLine();
     	  if(input.equalsIgnoreCase("y")) {
-    		  c.send(requestType,source,destination,encodeMode,operMode);
+    		  c.send(requestType,source,destination,operMode);
     	  }
     	}
+      s.close();
       System.exit(1);
    }
 }
