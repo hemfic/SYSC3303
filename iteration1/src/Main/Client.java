@@ -301,7 +301,6 @@ public class Client {
 
    public static void main(String args[])
    {
-	  boolean run=true;
 	  String source="";
 	  String destination="1";
 	  int encodeMode=1,requestType=1, operMode=2;
@@ -311,11 +310,11 @@ public class Client {
       Client c = new Client();
       //c.send(requestType,source,destination,encodeMode, operMode);
       
-      while(run) {
+      while(true) {
     	  System.out.println("1) Read Request \n2) Write Request\n3) Exit");
     	  input=s.nextLine();
     	  requestType = Integer.parseInt(input);
-    	  if(requestType!=1 || requestType!=2) run = false;
+    	  if(requestType!=1 || requestType!=2) break;
     	  System.out.println("Enter filename of source for read");
     	  source = s.nextLine();
     	  System.out.println("Enter filename of destination for read");
