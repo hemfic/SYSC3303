@@ -219,6 +219,7 @@ public class ClientConnectionThread extends Thread{
 		    	block += data[3];
 		    	ack[2] = data[2];
 		    	ack[3] = data[3];
+		    	dataBuffer.flip();
 				while(true) {
 					try {
 						lock = fileController.lock().get();
@@ -233,9 +234,7 @@ public class ClientConnectionThread extends Thread{
 						e.printStackTrace();
 					}
 				}
-				System.out.println(lock.toString());
-				
-		    	fileController.write(dataBuffer,(block-1)*512+dataBuffer.array().length);
+		    	fileController.write(dataBuffer,(block-1)*512);
 		    	lock.release();
 		    	try {
 		    		sendRecieveSocket.send(ACKPacket);
