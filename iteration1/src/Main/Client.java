@@ -244,25 +244,23 @@ public class Client {
 	   }
 	   
 	   blocks = (data.length / 512);
-	   if(blocks==0) {
-		   blocks = 1;
+	   if(data.length%512!=0) {
+		   blocks += 1;
 	   }
 	   for(int i=0;i<blocks;i++) {
 		   if(i==blocks-1) {
-			   sendData=Arrays.copyOfRange(sendData, 0, data.length-(i*512)+4);
-			   for(int j=4;j<data.length-(i*512)+4;j++) {
-				   sendData[2]=(byte) ((blocks) / Math.pow(2,8));
-				   sendData[3]=(byte) ((blocks) % Math.pow(2,8));
-				   System.out.println(j+i*512-4);
-				   sendData[j]=data[j+i*512-4];
-			   }
+			   sendData=new byte[data.length-(i*512)+4];
 		   }else {
-			   for(int j=4;j<512;j++) {
-				   sendData[2]=(byte) ((blocks) / Math.pow(2,8));
-				   sendData[3]=(byte) ((blocks) % Math.pow(2,8));
-				   sendData[j]=data[j+i*512-4];
-			   }
+			   sendData=new byte[516];
 		   }
+		   sendData[0] = 0;
+		   sendData[1] = 3;
+		   sendData[2]=(byte) ((i+1) / Math.pow(2,8));
+		   sendData[3]=(byte) ((i+1) % Math.pow(2,8));
+		   for(int j=4;j<sendData.length;j++) {
+			   sendData[j]=data[j+(i*512)-4];
+		   }
+		   System.out.println(sendData.length);
 		   System.out.println("Sending(string): "+new String(sendData).trim() +" on port:"+sockRS.getLocalPort());
 		   System.out.println("Sending(byte): "+ Arrays.toString(sendData));
 		   try {
@@ -288,17 +286,6 @@ public class Client {
 		   System.out.println("Received (byte): "+Arrays.toString(rcvData));
 	   }
 	   System.out.println("Done Write Request");
-   }
-   public boolean testSuite() {
-	   System.out.println("\nTesting correct WRQ");
-	   send(2, "ReadFrom.txt", "WriteTo.txt", 1);
-	   System.out.println("\nTesting correct multiPackage RRQ");
-	   send(1,"BigFile.txt","bigFileLocal.txt",1);
-	   System.out.println("\nTesting WRQ for an already existing file");
-	   send(2, "ReadFrom.txt", "WriteTo.txt", 1);
-	   System.out.println("\nWRQ to file without permissions");
-	   send(2,"WriteTo.txt","WriteForbidden.txt",1);
-	   return true;
    }
 
    public static void main(String args[])
