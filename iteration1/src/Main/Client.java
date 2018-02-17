@@ -289,6 +289,17 @@ public class Client {
 	   }
 	   System.out.println("Done Write Request");
    }
+   public boolean testSuite() {
+	   System.out.println("\nTesting correct WRQ");
+	   send(2, "ReadFrom.txt", "WriteTo.txt", 1);
+	   System.out.println("\nTesting correct multiPackage RRQ");
+	   send(1,"BigFile.txt","bigFileLocal.txt",1);
+	   System.out.println("\nTesting WRQ for an already existing file");
+	   send(2, "ReadFrom.txt", "WriteTo.txt", 1);
+	   System.out.println("\nWRQ to file without permissions");
+	   send(2,"WriteTo.txt","WriteForbidden.txt",1);
+	   return true;
+   }
 
    public static void main(String args[])
    {
