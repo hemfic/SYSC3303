@@ -11,6 +11,7 @@ public class Server {
 	ThreadGroup allResponseThreads;
 	int num;
 	public boolean verbose;
+	
 	public Server(boolean v) {
 		//Create console monitor
 		verbose = v;

@@ -187,8 +187,8 @@ public class ClientConnectionThread extends Thread{
 		
 		//Acquire file lock
 		try {		
-			if(!file.getAbsoluteFile().createNewFile()) {
-				if(!file.getAbsoluteFile().canWrite()) return respondError("File Already Exists",6);
+			if(!file.getAbsoluteFile().createNewFile()) { 
+				return respondError("File Already Exists",6);
 			}
 			fileController = AsynchronousFileChannel.open(file.toPath(),StandardOpenOption.WRITE);
 			FileLock lock;
