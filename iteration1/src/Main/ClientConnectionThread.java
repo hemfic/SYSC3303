@@ -93,7 +93,7 @@ public class ClientConnectionThread extends Thread{
 		//Confirm file
 		File file = new File(serverFiles,fName);
 		printMessage(file.toString());
-		if(file.getAbsoluteFile().length()>65024) return respondError("File is too long for transfer",3);
+		if(file.getAbsoluteFile().length()>33554432) return respondError("File is too long for transfer",3);
 		
 		//Acquire file lock
 		try {
@@ -228,8 +228,8 @@ public class ClientConnectionThread extends Thread{
 		    	sendRecieveSocket.receive(dataPacket);
 		    	dataBuffer=ByteBuffer.allocate(512);
 		    	dataBuffer.put(Arrays.copyOfRange(data,4,dataPacket.getLength()));
-		    	block = data[2]<<8;
-		    	block += data[3];
+		    	block = unsignedToBytes(data[2])*256;
+		    	block += unsignedToBytes(data[3]);
 		    	ack[2] = data[2];
 		    	ack[3] = data[3];
 		    	dataBuffer.flip();
@@ -283,6 +283,10 @@ public class ClientConnectionThread extends Thread{
 			e.printStackTrace();
 			return -1;
 		}
+	}
+	private static int unsignedToBytes(byte a) {
+		int b = a & 0xFF;
+		return b;
 	}
 	private void printMessage(String out) {
 		if(verbose) {
