@@ -45,15 +45,15 @@ public class Client {
    }
    
    public void send(int type, String source,String dest, int operMode) {
-	   int index=2;	//offset for packet creation
+	   int index = 2;	//offset for packet creation
 	   int sendPort = SERVERPORT; 
-	   String t="netascii";
+	   String t = "netascii";
 	   
 	   byte[] filename = source.getBytes(), typeB=t.getBytes();
 	   if(type==2) {
 		   filename = dest.getBytes();
 	   }
-	   byte[] sendData=new byte[4+filename.length+typeB.length]; 	//buffer for sending data
+	   byte[] sendData=new byte[4 + filename.length + typeB.length]; 	//buffer for sending data
 	   
 	   //set sendingPort depending on Operating Mode(Normal/Test)
 	   if(operMode==1) {
@@ -63,25 +63,25 @@ public class Client {
 	   }
 	
 	   if(type==1) {				// Read request
-		   sendData[0]=0;
-		   sendData[1]=1;
+		   sendData[0] = 0;
+		   sendData[1] = 1;
 	   }else if(type==2) { 			// Write request
-		   sendData[0]=0;
-		   sendData[1]=2;
+		   sendData[0] = 0;
+		   sendData[1] = 2;
 	   }
-	   for(int i=0;i<filename.length;i+=1) {
-		   index+=1;
+	   for(int i=0;i<filename.length;i++) {
+		   index++;
 		   sendData[i+2]=filename[i];	//load byte converted char from filenameString
 	   }
 	   sendData[index]=0;
-	   index+=1;
-	   for(int i=index;i<index+typeB.length;i+=1) {
-		   sendData[i]=typeB[i-index];	//load byte converted char from typeB string
+	   index++;
+	   for(int i=index;i<index + typeB.length;i++) {
+		   sendData[i] = typeB[i-index];	//load byte converted char from typeB string
 	   }
-	   sendData[index+typeB.length]=0;
+	   sendData[index + typeB.length]=0;
 	   
-	   System.out.println("Sending(string): "+new String(sendData).trim()+" on port:"+sockRS.getLocalPort());
-	   System.out.println("Sending(byte): "+Arrays.toString(sendData));
+	   System.out.println("Sending(string): "+ new String(sendData).trim() +" on port:" + sockRS.getLocalPort());
+	   System.out.println("Sending(byte): "+ Arrays.toString(sendData));
 	   
 	   try {
 		   sendPacket=new DatagramPacket(sendData, sendData.length,InetAddress.getLocalHost() , sendPort);
@@ -101,43 +101,17 @@ public class Client {
 	   System.out.println("Received (byte): "+Arrays.toString(rcvData));
 	   
 	   //check if we received an error packet. All packets, for now, are non-recoverable
-	   if(rcvData[0]==0&&rcvData[1]==5) {
+	   if(rcvData[0]==0 && rcvData[1]==5) {
 		   handleError();
 		}
 	   
-	   if(rcvData[0]==0&&rcvData[1]==3) {
+	   if(rcvData[0]== 0 &&rcvData[1]==3) {
 		   handleRead(dest);
 	   }
-	   if(rcvData[0]==0&&rcvData[1]==4) {
+	   if(rcvData[0]==0 && rcvData[1]==4) {
 		   handleWrite(source);
 	   }
 	   
-   }
-   
-   public void handleError() {
-		System.out.println("ERROR TYPE " + rcvData[3] + " received.");
-		
-		byte[] errorMessage = Arrays.copyOfRange(rcvData, 4,receivePacket.getLength());
-		System.out.println("Error Message: " + new String(errorMessage));
-		System.out.println("Terminating Request");
-		System.exit(1);
-
-		/*
-		//File Not Found Error. During RRQ, the Server couldn't find the file.
-		if(errorType == 1) {
-			//kill the process
-		}
-		
-		//Access Violation. During RRQ, don't have permissions to read file
-		if(errorType == 2) {
-			//kill the process.
-			//maybe in the future, let the client retry with a different file.
-		}
-		//File Already Exists. During WRQ, file to write to already exists.
-		if(errorType == 6) {
-			//acknowledge the error, but return
-		}
-		*/
    }
    
    public DatagramPacket buildAck(int block,InetAddress address,int port) {
@@ -154,6 +128,16 @@ public class Client {
 		   System.exit(1);
 	   }
 	   return ret;
+   }
+   
+   
+   public void handleError() {
+		System.out.println("ERROR TYPE " + rcvData[3] + " received.");
+		
+		byte[] errorMessage = Arrays.copyOfRange(rcvData, 4,receivePacket.getLength());
+		System.out.println("Error Message: " + new String(errorMessage));
+		System.out.println("Terminating Request");
+		System.exit(1);
    }
    
    //assumes the first block of received data is already in rcvData
@@ -174,22 +158,22 @@ public class Client {
 	   while(!done) {
 		   byte[] raw=Arrays.copyOfRange(rcvData, 4,receivePacket.getLength());
 		   byte[] rawB=Arrays.copyOfRange(rcvData, 2, 4);
-		   int block= rawB[1]+(rawB[0]*16);
+		   int block= rawB[1] + (rawB[0] * 16);
 		   
 		   if(raw.length<512) {
 			   System.out.println("done");
-			   if(data.length<(block-1)*512+raw.length) {
-				   data=Arrays.copyOf(data,(block-1)*512+raw.length);
-				   for(int j=(block-1)*512;j<(block-1)*512+raw.length;j+=1){
-					   data[j]=raw[j-(block-1)*512];
+			   if(data.length<(block-1) * 512 + raw.length) {
+				   data=Arrays.copyOf(data,(block-1) * 512 + raw.length);
+				   for(int j=(block-1)*512;j<(block-1) * 512 + raw.length;j++){
+					   data[j] = raw[j-(block-1)*512];
 				   }
 			   }
-			   done=true;
+			   done = true;
 		   }else {
 			   System.out.println("not done");
 			   if(data.length<block*512) {
 				   data=Arrays.copyOf(data,block*512);
-				   for(int j=(block-1)*512;j<block*512;j+=1){
+				   for(int j = (block-1)*512;j<block*512;j++){
 					   data[j]=raw[j-(block-1)*512];
 				   }
 			   }
@@ -207,7 +191,7 @@ public class Client {
 				   receivePacket=new DatagramPacket(rcvData,rcvData.length,serverAddress,serverPort);
 				   sockRS.receive(receivePacket);
 				   
-				   if(rcvData[0]==0&&rcvData[1]==5) {
+				   if(rcvData[0]==0 && rcvData[1]==5) {
 					  handleError();
 				   }
 				   
@@ -216,18 +200,13 @@ public class Client {
 				   System.exit(1);
 			   }
 			   
-			   System.out.println("Received (string): "+new String(rcvData));
-			   System.out.println("Received (byte): "+Arrays.toString(rcvData));
+			   System.out.println("Received (string): " + new String(rcvData));
+			   System.out.println("Received (byte): " + Arrays.toString(rcvData));
 		   }
 	   }
 	   try {
-		   System.out.println("Writing: "+new String(data));
+		   System.out.println("Writing: "+ new String(data));
 		   fout.write(data);
-	   } catch (IOException e) {
-		   e.printStackTrace();
-		   System.exit(1);
-	   }
-	   try {
 		   fout.close();
 	   } catch (IOException e) {
 		   e.printStackTrace();
@@ -239,39 +218,40 @@ public class Client {
    public void handleWrite(String filename) {
 	   FileInputStream fin=null;
 	   String folderStructure = "src/Main/ClientFiles/";
-	   InetAddress serverAddress= receivePacket.getAddress();
-	   int serverPort=receivePacket.getPort();
-	   byte[] data=new byte[(int) Math.pow(2,25)];
-	   byte[] sendData=new byte[516];
-	   sendData[0]=0;
-	   sendData[1]=3;
-	   int size=0;
+	   InetAddress serverAddress = receivePacket.getAddress();
+	   int serverPort = receivePacket.getPort();
+	   byte[] data = new byte[(int) Math.pow(2,25)];
+	   byte[] sendData = new byte[516];
+	   sendData[0] = 0;
+	   sendData[1] = 3;
+	   int size = 0;
 	   int blocks;
 	   try {
-		   fin=new FileInputStream(folderStructure+filename);
+		   fin = new FileInputStream(folderStructure + filename);
 	   } catch (FileNotFoundException e) {
 		   e.printStackTrace();
 		   System.exit(1);
 	   }
 	   try {
-		   size=fin.read(data);
+		   size = fin.read(data);
 	   } catch (IOException e) {
 		   e.printStackTrace();
 	   }
-	   blocks=(data.length/512);
+	   
+	   blocks = (data.length / 512);
 	   if(blocks==0) {
-		   blocks=1;
+		   blocks = 1;
 	   }
-	   for(int i=0;i<blocks;i+=1) {
-		   for(int j=4;j<512;j+=1) {
-			   sendData[2]=(byte) ((blocks+1)/Math.pow(2,8));
-			   sendData[3]=(byte) ((blocks+1)%Math.pow(2,8));
+	   for(int i=0;i<blocks;i++) {
+		   for(int j=4;j<512;j++) {
+			   sendData[2]=(byte) ((blocks+1) / Math.pow(2,8));
+			   sendData[3]=(byte) ((blocks+1) % Math.pow(2,8));
 			   sendData[j]=data[j+i*512-4];
 		   }
-		   System.out.println("Sending(string): "+new String(sendData).trim()+" on port:"+sockRS.getLocalPort());
-		   System.out.println("Sending(byte): "+Arrays.toString(sendData));
+		   System.out.println("Sending(string): "+new String(sendData).trim() +" on port:"+sockRS.getLocalPort());
+		   System.out.println("Sending(byte): "+ Arrays.toString(sendData));
 		   try {
-			   sendPacket=new DatagramPacket(sendData,sendData.length,serverAddress,serverPort);
+			   sendPacket = new DatagramPacket(sendData, sendData.length, serverAddress, serverPort);
 			   sockRS.send(sendPacket);
 		   } catch (IOException e) {
 			   e.printStackTrace();
@@ -280,7 +260,7 @@ public class Client {
 		   try {
 			   sockRS.receive(receivePacket);
 			   
-			   if(rcvData[0]==0&&rcvData[1]==5) {
+			   if(rcvData[0]==0 && rcvData[1]==5) {
 			      handleError();
 		       }
 			   

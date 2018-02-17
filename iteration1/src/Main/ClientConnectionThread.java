@@ -26,10 +26,12 @@ public class ClientConnectionThread extends Thread{
 	public ClientConnectionThread(DatagramPacket request,int id, boolean v) {
 		threadId = id;
 		verbose = v;
+		
 		try {
 			sendRecieveSocket = new DatagramSocket();
 		}catch(SocketException e) {
 			printMessage("An error occured while trying to create a socket for client connection.");
+			
 			try {
 				sendRecieveSocket = new DatagramSocket();
 				printMessage("New socket "+sendRecieveSocket.getLocalSocketAddress());
@@ -41,13 +43,16 @@ public class ClientConnectionThread extends Thread{
 		}
 		clientRequest = request;		
 	}
+	
 	public void run() {
 		parse();
 		sendRecieveSocket.close();
 	}
+	
 	private int parse() {
 		//Test for validity of data
 		if(clientRequest.getLength()<6) return respondError("Request too short",4);
+		
 		byte data[] = clientRequest.getData();
 		int naught[] = new int[3];
 		int j = 0;
@@ -57,10 +62,13 @@ public class ClientConnectionThread extends Thread{
 				naught[j++]=i;
 			}
 		}
+		
 		//need exactly three zeros. No more, no less.
 		if(j<2) return respondError("Not enough zeroes",4);
+		
 		//No empty Strings plz;
 		if(naught[0]>0 || naught[1]==3 || naught[2]==naught[1]+1) return respondError("One or more empty strings",4);
+		
 		//If strings are non-empty then do the work to make it
 		String fName = new String(data,2,naught[1]-2);
 		String method = new String(data,naught[1]+1,(naught[2]-naught[1])-1);
@@ -86,13 +94,12 @@ public class ClientConnectionThread extends Thread{
 		File file = new File(serverFiles,fName);
 		printMessage(file.toString());
 		if(file.getAbsoluteFile().length()>33554432) return respondError("File is too long for transfer",3);
+		if(file.getUsableSpace() < file.getAbsolutePath().length()) return respondError("Insufficient space to transfer file.", 3);
 
 		//Acquire file lock
 		try {
 			fileController = AsynchronousFileChannel.open(file.toPath(),StandardOpenOption.READ);
-
-			
-		    int block = 0;
+			int block = 0;
 
 		    //prebuild expected ack to make for easy comparison;
 		    byte[] expectedACK = new byte[4];
@@ -129,9 +136,11 @@ public class ClientConnectionThread extends Thread{
 		    	lock.release();
 		    	expectedACK[2] = (byte)((block+1) >> 8);
 		    	expectedACK[3] = (byte)(block+1);
+		    	
 		    	dataPacket = new DatagramPacket(Arrays.copyOfRange(dataBuffer.array(), 0, rc+4),4+rc,clientRequest.getAddress(),clientRequest.getPort());
 		    	byte[] ack = new byte[4];
 		    	ACKPacket = new DatagramPacket(ack,4);
+		    	
 		    	try {
 		    		sendRecieveSocket.send(dataPacket);
 		    		sendRecieveSocket.receive(ACKPacket);
@@ -165,12 +174,9 @@ public class ClientConnectionThread extends Thread{
 		    	ie.printStackTrace();
 		    }
 		    return -1;
-		} catch (InterruptedException e1) {
+		
+		} catch (InterruptedException | ExecutionException e1) {
 			e1.printStackTrace();
-		} catch (ExecutionException e1) {
-			e1.printStackTrace();
-		}catch (Exception e) {
-			e.printStackTrace();
 		}
 		return 0;
 	}
@@ -178,6 +184,7 @@ public class ClientConnectionThread extends Thread{
 		//Check file
 		File file = new File(serverFiles,fName);
 		printMessage(file.getAbsolutePath());
+		
 		//Acquire file lock
 		try {		
 			if(!file.getAbsoluteFile().createNewFile()) {
@@ -248,7 +255,9 @@ public class ClientConnectionThread extends Thread{
 		byte[] errorArray = errorMsg.getBytes();
 		errorBuffer = ByteBuffer.allocate((errorArray.length+5));
 		errorBuffer.putShort((short)5).putShort((short)errorCode).put(errorArray).put((byte)0);
+		
 		printMessage("Sending error packet to: "+ clientRequest.getAddress()+clientRequest.getPort());
+		
 		dataPacket = new DatagramPacket(errorBuffer.array(),errorBuffer.position(),clientRequest.getAddress(),clientRequest.getPort());
 		try {
 			sendRecieveSocket.send(dataPacket);
