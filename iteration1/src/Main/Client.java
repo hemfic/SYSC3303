@@ -32,6 +32,7 @@ public class Client {
    private DatagramSocket sockRS;
    private byte[] rcvData; 						//buffer for receiving data
    private final int HOSTPORT = 23, SERVERPORT = 69;
+   private boolean verbose=false;
 
    public Client() {
 	   rcvData=new byte[516]; 			
@@ -81,25 +82,35 @@ public class Client {
 	   }
 	   sendData[index + typeB.length]=0;
 	   
-	   System.out.println("Sending(string): "+ new String(sendData).trim() +" on port:" + sockRS.getLocalPort());
-	   System.out.println("Sending(byte): "+ Arrays.toString(sendData));
-	   
 	   try {
 		   sendPacket=new DatagramPacket(sendData, sendData.length,InetAddress.getLocalHost() , sendPort);
 		   sockRS.send(sendPacket);		//load packet and send
+		   
 	   } catch (Exception e) {
 		   e.printStackTrace();
 		   System.exit(1);
 	   }
+	   if(verbose) {
+		   System.out.print("Sent: ");
 	   
+		   if(type==1) {
+			   System.out.print("RRQ to: ");
+		   }else {
+			   System.out.print("WRQ to: ");
+		   }
+		   try {
+			   System.out.print(" IP:"+InetAddress.getLocalHost().getHostAddress()+" Port:"+sendPort);
+		   } catch (UnknownHostException e1) {
+			   e1.printStackTrace();
+		   }
+		   System.out.println(" Source filename: "+source+" Mode: ASCII");
+	   }
 	   try {							
 		   sockRS.receive(receivePacket);
 	   }catch(Exception e){
 		   e.printStackTrace();
 		   System.exit(1);
 	   }
-	   System.out.println("Received (string): "+new String(rcvData));
-	   System.out.println("Received (byte): "+Arrays.toString(rcvData));
 	   
 	   //check if we received an error packet. All packets, for now, are non-recoverable
 	   if(rcvData[0]==0 && rcvData[1]==5) {
@@ -107,9 +118,27 @@ public class Client {
 		}
 	   
 	   if(rcvData[0]== 0 &&rcvData[1]==3) {
+		   if(verbose) {
+			   System.out.print("Received: DATA from: ");
+			   try {
+				   System.out.print(" IP:"+InetAddress.getLocalHost().getHostAddress()+" Port:"+sendPort);
+			   } catch (UnknownHostException e1) {
+				   e1.printStackTrace();
+			   }
+			   System.out.println(" Block:"+(rcvData[3]+rcvData[2]*16)+" Data Size: "+receivePacket.getLength());
+		   }
 		   handleRead(dest);
 	   }
 	   if(rcvData[0]==0 && rcvData[1]==4) {
+		   if(verbose) {
+			   System.out.print("Received: ACK from: ");
+			   try {
+				   System.out.print(" IP:"+InetAddress.getLocalHost().getHostAddress()+" Port:"+sendPort);
+			   } catch (UnknownHostException e1) {
+				   e1.printStackTrace();
+			   }
+			   System.out.println(" Block: 0");
+		   }
 		   handleWrite(source);
 	   }
 	   
@@ -121,7 +150,6 @@ public class Client {
 	   byte[] b=ByteBuffer.allocate(4).putInt(block).array();
 	   data[2]=b[2];
 	   data[3]=b[3];
-	   System.out.println("ACK: "+Arrays.toString(data));
 	   try {
 		   ret= new DatagramPacket(data,data.length,address,port);
 	   } catch (Exception e) {
@@ -133,13 +161,20 @@ public class Client {
    
    
    public int handleError() {
-		System.out.println("ERROR TYPE " + rcvData[3] + " received.");
-		
-		byte[] errorMessage = Arrays.copyOfRange(rcvData, 4,receivePacket.getLength());
-		System.out.println("Error Message: " + new String(errorMessage));
-		System.out.println("Terminating Request");
-		//System.exit(1);
-		return -1;
+	   if(verbose) {
+		   System.out.print("ERROR TYPE " + rcvData[3] + " received from");
+		   try {
+			   System.out.println(" IP:"+InetAddress.getLocalHost().getHostAddress()+" Port:"+receivePacket.getPort());
+		   } catch (UnknownHostException e1) {
+			   e1.printStackTrace();
+		   }		
+	   }
+	   byte[] errorMessage = Arrays.copyOfRange(rcvData, 4,receivePacket.getLength());
+	   
+	   System.out.println("Error Message: " + new String(errorMessage));
+	   System.out.println("Terminating Request");
+	   //System.exit(1);
+	   return -1;
    }
    
    //assumes the first block of received data is already in rcvData
@@ -163,7 +198,6 @@ public class Client {
 		   int block= rawB[1] + (rawB[0] * 16);
 		   
 		   if(raw.length<512) {
-			   System.out.println("done");
 			   if(data.length<(block-1) * 512 + raw.length) {
 				   data=Arrays.copyOf(data,(block-1) * 512 + raw.length);
 				   for(int j=(block-1)*512;j<(block-1) * 512 + raw.length;j++){
@@ -172,7 +206,6 @@ public class Client {
 			   }
 			   done = true;
 		   }else {
-			   System.out.println("not done");
 			   if(data.length<block*512) {
 				   data=Arrays.copyOf(data,block*512);
 				   for(int j = (block-1)*512;j<block*512;j++){
@@ -180,12 +213,20 @@ public class Client {
 				   }
 			   }
 		   }
-		   System.out.println("Sending ACK for block: "+(block));
 		   try {
 			   sockRS.send(buildAck(block,serverAddress,serverPort));
 		   } catch (IOException e1) {
 			   e1.printStackTrace();
 			   System.exit(1);
+		   }
+		   if(verbose) {
+			   System.out.print("Sent: ACK to: ");
+			   try {
+				   System.out.print(" IP:"+InetAddress.getLocalHost().getHostAddress()+" Port:"+sendPacket.getPort());
+			   } catch (UnknownHostException e1) {
+				   e1.printStackTrace();
+		   		}
+		   		System.out.println(" Block: "+block);
 		   }
 		   if(!done) {
 			   try {
@@ -202,13 +243,22 @@ public class Client {
 				   e.printStackTrace();
 				   System.exit(1);
 			   }
+			   if(verbose) {
+				   System.out.print("Received: DATA from: ");
+				   try {
+					   System.out.print(" IP:"+InetAddress.getLocalHost().getHostAddress()+" Port:"+sendPacket.getPort());
+				   } catch (UnknownHostException e1) {
+					   e1.printStackTrace();
+				   }
+				   System.out.println(" Block:"+(rcvData[3]+rcvData[2]*16)+" Data Size: "+receivePacket.getLength());
+			   }
 			   
-			   System.out.println("Received (string): " + new String(rcvData));
-			   System.out.println("Received (byte): " + Arrays.toString(rcvData));
 		   }
 	   }
 	   try {
-		   System.out.println("Writing: "+ new String(data));
+		   if(verbose) {
+			   System.out.println("Writing: "+ new String(data));
+		   }
 		   fout.write(data);
 		   fout.close();
 	   } catch (IOException e) {
@@ -260,15 +310,21 @@ public class Client {
 		   for(int j=4;j<sendData.length;j++) {
 			   sendData[j]=data[j+(i*512)-4];
 		   }
-		   System.out.println(sendData.length);
-		   System.out.println("Sending(string): "+new String(sendData).trim() +" on port:"+sockRS.getLocalPort());
-		   System.out.println("Sending(byte): "+ Arrays.toString(sendData));
 		   try {
 			   sendPacket = new DatagramPacket(sendData, sendData.length, serverAddress, serverPort);
 			   sockRS.send(sendPacket);
 		   } catch (IOException e) {
 			   e.printStackTrace();
 			   System.exit(1);
+		   }
+		   if(verbose) {
+			   System.out.print("Sent: DATA to: ");
+			   try {
+				   System.out.print(" IP:"+InetAddress.getLocalHost().getHostAddress()+" Port:"+sendPacket.getPort());
+			   } catch (UnknownHostException e1) {
+				   e1.printStackTrace();
+			   }
+			   System.out.println(" Block: "+(i+1)+" Data Size: "+(sendPacket.getLength()-4));
 		   }
 		   try {
 			   sockRS.receive(receivePacket);
@@ -281,11 +337,29 @@ public class Client {
 			   e.printStackTrace();
 			   System.exit(1);
 		   }
-
-		   System.out.println("Received (string): "+new String(rcvData));
-		   System.out.println("Received (byte): "+Arrays.toString(rcvData));
+		   if(verbose) {
+			   System.out.print("Received: ACK from: ");
+			   try {
+				   System.out.print(" IP:"+InetAddress.getLocalHost().getHostAddress()+" Port:"+sendPacket.getPort());
+			   } catch (UnknownHostException e1) {
+				   e1.printStackTrace();
+			   }
+			   System.out.println(" Block: "+(i+1));
+		   }
 	   }
 	   System.out.println("Done Write Request");
+   }
+   
+   public void toggleVerbose() {
+	   verbose=!verbose;
+   }
+   
+   public String getVerboseState() {
+	   String ret="";
+	   if(verbose) {
+		   ret="true";
+	   }else {ret="false";}
+	   return ret;
    }
 
    public static void main(String args[])
@@ -295,39 +369,42 @@ public class Client {
 	  int requestType=1, operMode=2;
 	  String input;
 	  Scanner s= new Scanner(System.in);
-	  
-      //Client c = new Client();
-      //c.send(requestType,source,destination,encodeMode, operMode);
 	  Client c = new Client();
-	  c.send(2, "ReadFrom.txt", "WriteTo.txt", 1);
-	  c.send(1,"MarkedFile.txt","test.txt", 1);
-      /*while(true) {
-    	  System.out.println("1) Read Request \n2) Write Request\n3) Exit");
+	  
+      while(true) {
+    	  System.out.println("Toggle Verbose Mode? y/n Currently: "+c.getVerboseState());
+    	  if(s.nextLine().equalsIgnoreCase("y")) {
+    		  c.toggleVerbose();
+    		  System.out.println("Verbose toggled. Now: "+c.getVerboseState());
+    	  }
+    	  System.out.println("1) Read Request \n2) Write Request\nType Exit at any point to exit");
     	  input=s.nextLine();
+    	  requestType =0;
     	  requestType = Integer.parseInt(input);
     	  if(requestType!=1 && requestType!=2) break;
     	  if(requestType==1) {
     		  System.out.println("Enter filename of source for read");
         	  source = s.nextLine();
+        	  if(source.equalsIgnoreCase("exit")) {break;}
         	  System.out.println("Enter filename of destination for read");
-          	  destination = s.nextLine(); 
+          	  destination = s.nextLine();
+          	  if(destination.equalsIgnoreCase("exit")) {break;}
     	  }else {
     		  System.out.println("Enter filename of source for write");
         	  source = s.nextLine();
+        	  if(source.equalsIgnoreCase("exit")) {break;}
         	  System.out.println("Enter filename of destination for write");
           	  destination = s.nextLine();
+          	  if(destination.equalsIgnoreCase("exit")) {break;}
     	  }
       	  System.out.println("1) Normal Mode \n2) Test Mode");
    	  	  input = s.nextLine();
-   	  	  try {
+   	  	  if(input.equalsIgnoreCase("exit")) {break;}
    	  	  operMode = Integer.parseInt(input);
-   	  	  }catch(Exception e) {
-   	  		  e.printStackTrace();
-   	  		  break;
-   	  	  }
    	  	  while(operMode!= 1 && operMode!=2){
    	  		  System.out.println("1) Normal Mode \n2) Test Mode");
    	  		  input = s.nextLine();
+   	  		  if(input.equalsIgnoreCase("exit")) {break;}
    	  		  operMode = Integer.parseInt(input);
    	  	  }
    	  	  System.out.println("Settings: Type(1-read,2-write):"+requestType+" Source: "+source+" Destination: "+destination + " OperatingMode(1-Normal, 2-Test): " + operMode);
@@ -336,7 +413,7 @@ public class Client {
     	  if(input.equalsIgnoreCase("y")) {
     		  c.send(requestType,source,destination,operMode);
     	  }
-    	}*/
+    	}
       s.close();
       System.exit(1);
    }
