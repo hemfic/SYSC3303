@@ -300,6 +300,7 @@ public class Client {
       //c.send(requestType,source,destination,encodeMode, operMode);
 	  Client c = new Client();
 	  c.send(2, "ReadFrom.txt", "WriteTo.txt", 1);
+	  c.send(1,"MarkedFile.txt","test.txt", 1);
       /*while(true) {
     	  System.out.println("1) Read Request \n2) Write Request\n3) Exit");
     	  input=s.nextLine();

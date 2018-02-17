@@ -93,7 +93,7 @@ public class ClientConnectionThread extends Thread{
 		//Confirm file
 		File file = new File(serverFiles,fName);
 		printMessage(file.toString());
-		if(file.getAbsoluteFile().length()>33554432) return respondError("File is too long for transfer",3);
+		if(file.getAbsoluteFile().length()>65024) return respondError("File is too long for transfer",3);
 		
 		//Acquire file lock
 		try {
@@ -132,6 +132,19 @@ public class ClientConnectionThread extends Thread{
 					}
 				}
 		    	rc = fileController.read(dataBuffer,block*512).get();
+		    	if(rc<=0) {
+		    		rc = fileController.read(dataBuffer,block*512).get();
+		    		printMessage("Error when reading file");
+		    		if(rc>0) {
+		    			printMessage("May have fixed it, rc: "+rc);
+		    		}else{
+			    		rc = fileController.read(dataBuffer,block*512).get();
+			    		printMessage("Error when reading file");
+			    		if(rc>0) {
+			    			printMessage("May have fixed it, rc: "+rc);
+			    		}
+			    	}
+		    	}
 		    	lock.release();
 		    	expectedACK[2] = (byte)((block+1) >> 8);
 		    	expectedACK[3] = (byte)(block+1);
