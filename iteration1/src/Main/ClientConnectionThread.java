@@ -94,8 +94,7 @@ public class ClientConnectionThread extends Thread{
 		File file = new File(serverFiles,fName);
 		printMessage(file.toString());
 		if(file.getAbsoluteFile().length()>33554432) return respondError("File is too long for transfer",3);
-		if(file.getUsableSpace() < file.getAbsolutePath().length()) return respondError("Insufficient space to transfer file.", 3);
-
+		
 		//Acquire file lock
 		try {
 			fileController = AsynchronousFileChannel.open(file.toPath(),StandardOpenOption.READ);
@@ -184,6 +183,8 @@ public class ClientConnectionThread extends Thread{
 		//Check file
 		File file = new File(serverFiles,fName);
 		printMessage(file.getAbsolutePath());
+		//if(file.getUsableSpace() < file.getAbsolutePath().length()) return respondError("Insufficient space to transfer file.", 3);
+
 		
 		//Acquire file lock
 		try {		
@@ -212,7 +213,7 @@ public class ClientConnectionThread extends Thread{
 		    while (rc==512) {
 		    	dataPacket = new DatagramPacket(data,516);
 		    	sendRecieveSocket.receive(dataPacket);
-		    	dataBuffer.allocate(512);
+		    	dataBuffer=ByteBuffer.allocate(512);
 		    	dataBuffer.put(Arrays.copyOfRange(data,4,dataPacket.getLength()));
 		    	block = data[2]<<8;
 		    	block += data[3];
@@ -232,7 +233,9 @@ public class ClientConnectionThread extends Thread{
 						e.printStackTrace();
 					}
 				}
-		    	fileController.write(dataBuffer,block*512).get();
+				System.out.println(lock.toString());
+				
+		    	fileController.write(dataBuffer,(block-1)*512+dataBuffer.array().length);
 		    	lock.release();
 		    	try {
 		    		sendRecieveSocket.send(ACKPacket);
@@ -243,7 +246,7 @@ public class ClientConnectionThread extends Thread{
 		    }
 		    fileController.close();
 		    return 2;
-		} catch (IOException | InterruptedException | ExecutionException e) {
+		} catch (IOException e) {
 			printMessage(e.getCause().toString());
 		    e.printStackTrace();
 		}

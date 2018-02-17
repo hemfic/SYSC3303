@@ -1,5 +1,6 @@
 package Main;
 
+import java.io.File;
 import java.io.FileInputStream;
 import java.io.FileNotFoundException;
 import java.io.FileOutputStream;
@@ -131,13 +132,14 @@ public class Client {
    }
    
    
-   public void handleError() {
+   public int handleError() {
 		System.out.println("ERROR TYPE " + rcvData[3] + " received.");
 		
 		byte[] errorMessage = Arrays.copyOfRange(rcvData, 4,receivePacket.getLength());
 		System.out.println("Error Message: " + new String(errorMessage));
 		System.out.println("Terminating Request");
-		System.exit(1);
+		//System.exit(1);
+		return -1;
    }
    
    //assumes the first block of received data is already in rcvData
@@ -147,7 +149,7 @@ public class Client {
 	   InetAddress serverAddress= receivePacket.getAddress();
 	   int serverPort=receivePacket.getPort();
 	   int i=0; 
-	   boolean done=false, shortened=false;
+	   boolean done=false;
 	   byte[] data= {};
 	   try {
 		   fout=new FileOutputStream(folderStructure+filename);
@@ -193,6 +195,7 @@ public class Client {
 				   
 				   if(rcvData[0]==0 && rcvData[1]==5) {
 					  handleError();
+					  return;
 				   }
 				   
 			   } catch (IOException e) {
@@ -217,17 +220,19 @@ public class Client {
    
    public void handleWrite(String filename) {
 	   FileInputStream fin=null;
+	   
 	   String folderStructure = "src/Main/ClientFiles/";
+	   File f= new File(folderStructure+filename);
 	   InetAddress serverAddress = receivePacket.getAddress();
 	   int serverPort = receivePacket.getPort();
-	   byte[] data = new byte[(int) Math.pow(2,25)];
+	   byte[] data = new byte[(int)f.length()];
 	   byte[] sendData = new byte[516];
 	   sendData[0] = 0;
 	   sendData[1] = 3;
 	   int size = 0;
 	   int blocks;
 	   try {
-		   fin = new FileInputStream(folderStructure + filename);
+		   fin = new FileInputStream(f);
 	   } catch (FileNotFoundException e) {
 		   e.printStackTrace();
 		   System.exit(1);
@@ -243,10 +248,20 @@ public class Client {
 		   blocks = 1;
 	   }
 	   for(int i=0;i<blocks;i++) {
-		   for(int j=4;j<512;j++) {
-			   sendData[2]=(byte) ((blocks+1) / Math.pow(2,8));
-			   sendData[3]=(byte) ((blocks+1) % Math.pow(2,8));
-			   sendData[j]=data[j+i*512-4];
+		   if(i==blocks-1) {
+			   sendData=Arrays.copyOfRange(sendData, 0, data.length-(i*512)+4);
+			   for(int j=4;j<data.length-(i*512)+4;j++) {
+				   sendData[2]=(byte) ((blocks) / Math.pow(2,8));
+				   sendData[3]=(byte) ((blocks) % Math.pow(2,8));
+				   System.out.println(j+i*512-4);
+				   sendData[j]=data[j+i*512-4];
+			   }
+		   }else {
+			   for(int j=4;j<512;j++) {
+				   sendData[2]=(byte) ((blocks) / Math.pow(2,8));
+				   sendData[3]=(byte) ((blocks) % Math.pow(2,8));
+				   sendData[j]=data[j+i*512-4];
+			   }
 		   }
 		   System.out.println("Sending(string): "+new String(sendData).trim() +" on port:"+sockRS.getLocalPort());
 		   System.out.println("Sending(byte): "+ Arrays.toString(sendData));
@@ -285,20 +300,32 @@ public class Client {
 	  
       //Client c = new Client();
       //c.send(requestType,source,destination,encodeMode, operMode);
-      
-      while(true) {
-    	  Client c = new Client();
+	  Client c = new Client();
+	  c.send(2, "ReadFrom.txt", "WriteTo.txt", 1);
+      /*while(true) {
     	  System.out.println("1) Read Request \n2) Write Request\n3) Exit");
     	  input=s.nextLine();
     	  requestType = Integer.parseInt(input);
     	  if(requestType!=1 && requestType!=2) break;
-    	  System.out.println("Enter filename of source for read");
-    	  source = s.nextLine();
-    	  System.out.println("Enter filename of destination for read");
-      	  destination = s.nextLine();
+    	  if(requestType==1) {
+    		  System.out.println("Enter filename of source for read");
+        	  source = s.nextLine();
+        	  System.out.println("Enter filename of destination for read");
+          	  destination = s.nextLine(); 
+    	  }else {
+    		  System.out.println("Enter filename of source for write");
+        	  source = s.nextLine();
+        	  System.out.println("Enter filename of destination for write");
+          	  destination = s.nextLine();
+    	  }
       	  System.out.println("1) Normal Mode \n2) Test Mode");
    	  	  input = s.nextLine();
+   	  	  try {
    	  	  operMode = Integer.parseInt(input);
+   	  	  }catch(Exception e) {
+   	  		  e.printStackTrace();
+   	  		  break;
+   	  	  }
    	  	  while(operMode!= 1 && operMode!=2){
    	  		  System.out.println("1) Normal Mode \n2) Test Mode");
    	  		  input = s.nextLine();
@@ -310,7 +337,7 @@ public class Client {
     	  if(input.equalsIgnoreCase("y")) {
     		  c.send(requestType,source,destination,operMode);
     	  }
-    	}
+    	}*/
       s.close();
       System.exit(1);
    }
