@@ -142,6 +142,7 @@ public class ClientConnectionThread extends Thread{
 			    		printMessage("Error when reading file");
 			    		if(rc>0) {
 			    			printMessage("May have fixed it, rc: "+rc);
+			    			rc =0;
 			    		}
 			    	}
 		    	}

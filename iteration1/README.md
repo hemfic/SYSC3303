@@ -11,6 +11,7 @@ Creating a request
             For a WRQ, the File to Read from should be placed in src/Main/ClientFiles
 
       Testing
+      Using the file explorer if desired, alter the permissions of the file ReadWriteForbidden.txt (It would seem it is impossible to send with the permissions as they are). Deny all.
       A test suite has been created to test most of the errors asked for in this assignment. In the console it is option 3.
 
       Testing TFTP Error 3 (Disk Full or Allocation Exceeded)
