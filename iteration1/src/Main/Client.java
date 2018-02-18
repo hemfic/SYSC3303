@@ -195,7 +195,7 @@ public class Client {
 	   while(!done) {
 		   byte[] raw=Arrays.copyOfRange(rcvData, 4,receivePacket.getLength());
 		   byte[] rawB=Arrays.copyOfRange(rcvData, 2, 4);
-		   int block= rawB[1] + (rawB[0] * 16);
+		   int block= unsignedToBytes(rawB[1]) + unsignedToBytes(rawB[0])*256;
 		   
 		   if(raw.length<512) {
 			   if(data.length<(block-1) * 512 + raw.length) {
@@ -361,6 +361,26 @@ public class Client {
 	   }else {ret="false";}
 	   return ret;
    }
+   public boolean testSuite() {
+	   System.out.printf("%n%n%n%n");
+	   System.out.println("\nTesting a proper WRQ");
+	   send(2,"WriteTo.txt","WriteTo.txt",1);
+	   System.out.println("\nTesting a proper RRQ");
+	   send(1,"MarkedFile.txt","bigFileLocal.txt",1);
+	   System.out.println("\nTesting a WRQ to a file that already exists");
+	   send(2,"WriteTo.txt","WriteTo.txt",1);
+	   System.out.println("\nTesting RRQ for non-existent file");
+	   send(1,"test.txt","ThisDoesntExist.txt",1);
+	   System.out.println("\nTesting sending a poorly formated/illegal request");
+	   send(2,"","",1);
+	   System.out.println("\nTesting RRQ on forbidden file");
+	   send(1,"ReadWriteForbidden.txt","test.txt",1);
+	   return true;
+   }
+   private static int unsignedToBytes(byte a) {
+		int b = a & 0xFF;
+		return b;
+	}
 
    public static void main(String args[])
    {
@@ -377,11 +397,11 @@ public class Client {
     		  c.toggleVerbose();
     		  System.out.println("Verbose toggled. Now: "+c.getVerboseState());
     	  }
-    	  System.out.println("1) Read Request \n2) Write Request\nType Exit at any point to exit");
+    	  System.out.println("1) Read Request \n2) Write Request\n3) Run test suite\nType Exit at any point to exit");
     	  input=s.nextLine();
     	  requestType =0;
     	  requestType = Integer.parseInt(input);
-    	  if(requestType!=1 && requestType!=2) break;
+    	  if(requestType!=1 && requestType!=2 && requestType!=3) break;
     	  if(requestType==1) {
     		  System.out.println("Enter filename of source for read");
         	  source = s.nextLine();
@@ -389,13 +409,17 @@ public class Client {
         	  System.out.println("Enter filename of destination for read");
           	  destination = s.nextLine();
           	  if(destination.equalsIgnoreCase("exit")) {break;}
-    	  }else {
+    	  }else if(requestType==2){
     		  System.out.println("Enter filename of source for write");
         	  source = s.nextLine();
         	  if(source.equalsIgnoreCase("exit")) {break;}
         	  System.out.println("Enter filename of destination for write");
           	  destination = s.nextLine();
           	  if(destination.equalsIgnoreCase("exit")) {break;}
+    	  }else {
+    		  c.testSuite();
+    		  s.close();
+    	      System.exit(1);
     	  }
       	  System.out.println("1) Normal Mode \n2) Test Mode");
    	  	  input = s.nextLine();

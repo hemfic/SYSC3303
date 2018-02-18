@@ -1,0 +1,14 @@
+Creating a request
+
+1. Run Server.java. Enter "true" in the console for Verbose Mode, and "false" for Quiet Mode.
+2. If running in Test mode, run Host.java.
+3. Run Client.java. Input request settings based on console prompts.
+4. Once request is complete, you will be promted to input another request.
+Note: For a RRQ, the File to Read from should be placed in src/Main/ServerFiles
+      For a WRQ, the File to Read from should be placed in src/Main/ClientFiles
+
+Testing
+A test suite has been created to test most of the errors asked for in this assignment. In the console it is option 3.
+
+Testing TFTP Error 3 (Disk Full or Allocation Exceeded)
+The best way to test this is on a small thumb drive. Running this package on it, repeatedly request MarkedFile.txt to new files. 

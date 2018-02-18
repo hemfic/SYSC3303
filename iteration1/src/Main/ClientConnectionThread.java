@@ -67,7 +67,7 @@ public class ClientConnectionThread extends Thread{
 		if(j<2) return respondError("Not enough zeroes",4);
 		
 		//No empty Strings plz;
-		if(naught[0]>0 || naught[1]==3 || naught[2]==naught[1]+1) return respondError("One or more empty strings",4);
+		if(naught[0]>0 || naught[1]<3 || naught[2]==naught[1]+1) return respondError("One or more empty strings",4);
 		
 		//If strings are non-empty then do the work to make it
 		String fName = new String(data,2,naught[1]-2);
@@ -261,6 +261,9 @@ public class ClientConnectionThread extends Thread{
 		} catch (IOException e) {
 			printMessage(e.getCause().toString());
 		    e.printStackTrace();
+		    if(file.getFreeSpace()<512) {
+		    	respondError("We're all out a mem'ry cap'n",3);
+		    }
 		}
 		return 0;
 	}
