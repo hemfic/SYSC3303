@@ -1,17 +1,27 @@
 To-Do
+Update Client
+-add timeout handling
+-duplicate ACK handling
+
+Update Server
+-add timeout handling
+-duplicate ACK handling
+
+Update Error Sim
+Add console for error generation
+Add duplication
+Add packet loss
+Add delay
+
+Update Documentation
 
 Thomas
--Modes(Normal, Test)
--WriteRequest
--Make some packet class(ACK,)
--I/O Test Suite
+-Client
+-Server
 
 Eric
--Finish Quiet, Verbose Mode
--WriteRequest
--UI
-
+-console
+-delay
 Liz
--Timing Diagrams
--ReadMe
--UML
+-packet loss
+-duplication
