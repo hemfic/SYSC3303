@@ -8,7 +8,9 @@ import java.io.IOException;
 import java.net.*;
 import java.nio.ByteBuffer;
 import java.util.Arrays;
+import java.util.HashSet;
 import java.util.Scanner;
+import java.util.Set;
 /*
 Type   Opcode     Format without header
 
@@ -270,6 +272,7 @@ public class Client {
    
    public void handleWrite(String filename) {
 	   FileInputStream fin=null;
+	   Set<Integer> acksReceived = new HashSet<Integer>();
 	   
 	   String folderStructure = "src/Main/ClientFiles/";
 	   File f= new File(folderStructure+filename);
@@ -298,6 +301,13 @@ public class Client {
 		   blocks += 1;
 	   }
 	   for(int i=0;i<blocks;i++) {
+		   int ackNumber = ByteBuffer.wrap(receivePacket.getData()).getShort(2);
+		   if(acksReceived.contains(ackNumber)) {
+			   System.out.println("Duplicate ACKS received(Sorcerers Apprentice Bug).");
+			   System.exit(1);
+		   }
+		   acksReceived.add(ackNumber);
+		   
 		   if(i==blocks-1) {
 			   sendData=new byte[data.length-(i*512)+4];
 		   }else {
@@ -321,20 +331,17 @@ public class Client {
    public void sendData(int index) {
 	   try {
 		   sockRS.send(sendPacket);
-	   } catch (IOException e) {
-		   e.printStackTrace();
-		   System.exit(1);
-	   }
-	   if(verbose) {
-		   System.out.print("Sent: DATA to: ");
-		   try {
-			   System.out.print(" IP:"+InetAddress.getLocalHost().getHostAddress()+" Port:"+sendPacket.getPort());
-		   } catch (UnknownHostException e1) {
-			   e1.printStackTrace();
+	  
+		   if(verbose) {
+			   System.out.print("Sent: DATA to: ");
+			   try {
+				   System.out.print(" IP:"+InetAddress.getLocalHost().getHostAddress()+" Port:"+sendPacket.getPort());
+			   } catch (UnknownHostException e1) {
+				   e1.printStackTrace();
+			   }
+			   System.out.println(" Block: "+(index+1)+" Data Size: "+(sendPacket.getLength()-4));
 		   }
-		   System.out.println(" Block: "+(index+1)+" Data Size: "+(sendPacket.getLength()-4));
-	   }
-	   try {
+	  
 		   sockRS.setSoTimeout(5000);
 		   sockRS.receive(receivePacket);
 		   sockRS.setSoTimeout(0); //remove timeout?
