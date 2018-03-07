@@ -310,44 +310,58 @@ public class Client {
 		   for(int j=4;j<sendData.length;j++) {
 			   sendData[j]=data[j+(i*512)-4];
 		   }
-		   try {
-			   sendPacket = new DatagramPacket(sendData, sendData.length, serverAddress, serverPort);
-			   sockRS.send(sendPacket);
-		   } catch (IOException e) {
-			   e.printStackTrace();
-			   System.exit(1);
-		   }
-		   if(verbose) {
-			   System.out.print("Sent: DATA to: ");
-			   try {
-				   System.out.print(" IP:"+InetAddress.getLocalHost().getHostAddress()+" Port:"+sendPacket.getPort());
-			   } catch (UnknownHostException e1) {
-				   e1.printStackTrace();
-			   }
-			   System.out.println(" Block: "+(i+1)+" Data Size: "+(sendPacket.getLength()-4));
-		   }
-		   try {
-			   sockRS.receive(receivePacket);
-			   
-			   if(rcvData[0]==0 && rcvData[1]==5) {
-			      handleError();
-		       }
-			   
-		   } catch (IOException e) {
-			   e.printStackTrace();
-			   System.exit(1);
-		   }
-		   if(verbose) {
-			   System.out.print("Received: ACK from: ");
-			   try {
-				   System.out.print(" IP:"+InetAddress.getLocalHost().getHostAddress()+" Port:"+sendPacket.getPort());
-			   } catch (UnknownHostException e1) {
-				   e1.printStackTrace();
-			   }
-			   System.out.println(" Block: "+(i+1));
-		   }
+		   sendPacket = new DatagramPacket(sendData, sendData.length, serverAddress, serverPort);
+		   sendData(i);
+		   
 	   }
 	   System.out.println("Done Write Request");
+   }
+   
+   //attempt to send DATA and receive ACK. If ACK isn't received, re-send the DATA.
+   public void sendData(int index) {
+	   try {
+		   sockRS.send(sendPacket);
+	   } catch (IOException e) {
+		   e.printStackTrace();
+		   System.exit(1);
+	   }
+	   if(verbose) {
+		   System.out.print("Sent: DATA to: ");
+		   try {
+			   System.out.print(" IP:"+InetAddress.getLocalHost().getHostAddress()+" Port:"+sendPacket.getPort());
+		   } catch (UnknownHostException e1) {
+			   e1.printStackTrace();
+		   }
+		   System.out.println(" Block: "+(index+1)+" Data Size: "+(sendPacket.getLength()-4));
+	   }
+	   try {
+		   sockRS.setSoTimeout(5000);
+		   sockRS.receive(receivePacket);
+		   sockRS.setSoTimeout(0); //remove timeout?
+
+		   if(rcvData[0]==0 && rcvData[1]==5) {
+			  handleError();
+	       }
+		   
+	   } catch (SocketTimeoutException e) {
+		   if(verbose) {
+			   System.out.println("ACK was not received. Attempting to re-send DATA. ");
+		   }
+		   sendData(index);
+		   return;
+	   } catch(IOException e) {
+		   e.printStackTrace();
+		   System.exit(1);
+	   }
+	   if(verbose) {
+		   System.out.print("Received: ACK from: ");
+		   try {
+			   System.out.print(" IP:"+InetAddress.getLocalHost().getHostAddress()+" Port:"+sendPacket.getPort());
+		   } catch (UnknownHostException e1) {
+			   e1.printStackTrace();
+		   }
+		   System.out.println(" Block: "+(index+1));
+	   }
    }
    
    public void toggleVerbose() {

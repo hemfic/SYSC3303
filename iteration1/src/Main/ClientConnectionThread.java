@@ -9,9 +9,9 @@ import java.util.Arrays;
 
 public class ClientConnectionThread extends Thread{
 	DatagramPacket ACKPacket,dataPacket;
-	DatagramSocket sendRecieveSocket;
+	DatagramSocket sendReceiveSocket;
 	
-	int threadId;
+	int threadId, test;
 	
 	String serverFiles = "src/Main/ServerFiles";
 	
@@ -28,13 +28,13 @@ public class ClientConnectionThread extends Thread{
 		verbose = v;
 		
 		try {
-			sendRecieveSocket = new DatagramSocket();
+			sendReceiveSocket = new DatagramSocket();
 		}catch(SocketException e) {
 			printMessage("An error occured while trying to create a socket for client connection.");
 			
 			try {
-				sendRecieveSocket = new DatagramSocket();
-				printMessage("New socket "+sendRecieveSocket.getLocalSocketAddress());
+				sendReceiveSocket = new DatagramSocket();
+				printMessage("New socket "+sendReceiveSocket.getLocalSocketAddress());
 			}catch(SocketException se) {
 				printMessage("Second try to create socket failed. Closing thread");
 				printMessage(se.getCause().toString());
@@ -46,7 +46,7 @@ public class ClientConnectionThread extends Thread{
 	
 	public void run() {
 		parse();
-		sendRecieveSocket.close();
+		sendReceiveSocket.close();
 	}
 	
 	private int parse() {
@@ -105,7 +105,7 @@ public class ClientConnectionThread extends Thread{
 		    expectedACK[0]=(byte)0;
 		    expectedACK[1]=(byte)4;
 		    
-		    //DOWHILE read buffer, send, recieve acknowledgment;
+		    //DOWHILE read buffer, send, Receive acknowledgment;
 		    int rc = 512;
 		    FileLock lock;
 		    while (rc>511) {
@@ -154,21 +154,16 @@ public class ClientConnectionThread extends Thread{
 		    	byte[] ack = new byte[4];
 		    	ACKPacket = new DatagramPacket(ack,4);
 		    	
-		    	try {
-		    		sendRecieveSocket.send(dataPacket);
-		    		sendRecieveSocket.receive(ACKPacket);
-		    	}catch(IOException e) {
-		    		printMessage("IOException while trying to send data packet");
-		    		e.printStackTrace();
-		    	}
+		    	sendData();
+		    	
 		    	//If ACKPacket is as expected then move to the next block, else assume loss and repeat?
 		    	if(Arrays.equals(ack,expectedACK)) {
 		    		++block;
 		    		printMessage("rc = "+rc);
-		    		printMessage("Acknowledgement Recieved");
+		    		printMessage("Acknowledgement Received");
 		    	}else {
 		    		rc =512;
-		    		printMessage("Unexpected packet recieved");
+		    		printMessage("Unexpected packet Received");
 		    		printMessage("Non-optimal package order not protected for");
 		    	}
 		    }
@@ -193,6 +188,23 @@ public class ClientConnectionThread extends Thread{
 		}
 		return 0;
 	}
+	
+	//attempt to send DATA and receive ACK. If ACK isn't received, re-send the DATA.
+	private void sendData() {
+		try {
+			sendReceiveSocket.setSoTimeout(5000);
+    		sendReceiveSocket.send(dataPacket);
+    		sendReceiveSocket.receive(ACKPacket);
+			sendReceiveSocket.setSoTimeout(0);
+		}catch(SocketTimeoutException e){ 
+			 System.out.println("ACK was not received. Attempting to re-send DATA. ");
+			 sendData();
+		}catch(IOException e) {
+    		printMessage("IOException while trying to send data packet");
+    		e.printStackTrace();
+    	}
+	}
+	
 	private int respondWrite(String fName,String method) {
 		//Check file
 		File file = new File(serverFiles,fName);
@@ -222,11 +234,11 @@ public class ClientConnectionThread extends Thread{
 		    ack[2]=(byte)0;
 		    ack[3]=(byte)0;
 		    ACKPacket = new DatagramPacket(ack,4,clientRequest.getSocketAddress());
-		    sendRecieveSocket.send(ACKPacket);
+		    sendReceiveSocket.send(ACKPacket);
 		    //DOWHILE read buffer, send, receive acknowledgment;
 		    while (rc==512) {
 		    	dataPacket = new DatagramPacket(data,516);
-		    	sendRecieveSocket.receive(dataPacket);
+		    	sendReceiveSocket.receive(dataPacket);
 		    	dataBuffer=ByteBuffer.allocate(512);
 		    	dataBuffer.put(Arrays.copyOfRange(data,4,dataPacket.getLength()));
 		    	block = unsignedToBytes(data[2])*256;
@@ -251,7 +263,7 @@ public class ClientConnectionThread extends Thread{
 		    	fileController.write(dataBuffer,(block-1)*512);
 		    	lock.release();
 		    	try {
-		    		sendRecieveSocket.send(ACKPacket);
+		    		sendReceiveSocket.send(ACKPacket);
 		    	}catch(IOException e) {
 		    		printMessage("IOException while trying to send data packet");
 		    		e.printStackTrace();
@@ -279,7 +291,7 @@ public class ClientConnectionThread extends Thread{
 		
 		dataPacket = new DatagramPacket(errorBuffer.array(),errorBuffer.position(),clientRequest.getAddress(),clientRequest.getPort());
 		try {
-			sendRecieveSocket.send(dataPacket);
+			sendReceiveSocket.send(dataPacket);
 			printMessage("error packet sent");
 			return 5;
 		}catch(IOException e) {
