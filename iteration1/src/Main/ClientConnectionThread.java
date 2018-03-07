@@ -6,6 +6,8 @@ import java.nio.file.*;
 import java.nio.ByteBuffer;
 import java.nio.channels.*;
 import java.util.Arrays;
+import java.util.HashSet;
+import java.util.Set;
 
 public class ClientConnectionThread extends Thread{
 	DatagramPacket ACKPacket,dataPacket;
@@ -90,6 +92,8 @@ public class ClientConnectionThread extends Thread{
 		}
 	}
 	private int respondRead(String fName,String method) {
+		//Set of ACKS already received
+		Set<Integer> acksReceived = new HashSet<Integer>(); 
 		//Confirm file
 		File file = new File(serverFiles,fName);
 		printMessage(file.toString());
@@ -100,10 +104,11 @@ public class ClientConnectionThread extends Thread{
 			fileController = AsynchronousFileChannel.open(file.toPath(),StandardOpenOption.READ);
 			int block = 0;
 
-		    //prebuild expected ack to make for easy comparison;
+		    /*prebuild expected ack to make for easy comparison;
 		    byte[] expectedACK = new byte[4];
 		    expectedACK[0]=(byte)0;
 		    expectedACK[1]=(byte)4;
+		    */
 		    
 		    //DOWHILE read buffer, send, Receive acknowledgment;
 		    int rc = 512;
@@ -147,24 +152,25 @@ public class ClientConnectionThread extends Thread{
 			    	}
 		    	}
 		    	lock.release();
-		    	expectedACK[2] = (byte)((block+1) >> 8);
-		    	expectedACK[3] = (byte)(block+1);
+		    	//expectedACK[2] = (byte)((block+1) >> 8);
+		    	//expectedACK[3] = (byte)(block+1);
 		    	
 		    	dataPacket = new DatagramPacket(Arrays.copyOfRange(dataBuffer.array(), 0, rc+4),4+rc,clientRequest.getAddress(),clientRequest.getPort());
 		    	byte[] ack = new byte[4];
 		    	ACKPacket = new DatagramPacket(ack,4);
 		    	
 		    	sendData();
-		    	
-		    	//If ACKPacket is as expected then move to the next block, else assume loss and repeat?
-		    	if(Arrays.equals(ack,expectedACK)) {
+		    	int ackNumber = ByteBuffer.wrap(ack).getShort(2);
+		    	//If ACKPacket is as expected then move to the next block, else send a TFTP ERROR 0?
+		    	if(!acksReceived.contains(ackNumber)) {
 		    		++block;
+		    		acksReceived.add(ackNumber);
 		    		printMessage("rc = "+rc);
 		    		printMessage("Acknowledgement Received");
 		    	}else {
-		    		rc =512;
+		    		rc = 512;
 		    		printMessage("Unexpected packet Received");
-		    		printMessage("Non-optimal package order not protected for");
+		    		return respondError("Duplicate ACK received(Sorcere's Apprentice Bug)",0);
 		    	}
 		    }
 		    fileController.close();

@@ -303,8 +303,9 @@ public class Client {
 	   for(int i=0;i<blocks;i++) {
 		   int ackNumber = ByteBuffer.wrap(receivePacket.getData()).getShort(2);
 		   if(acksReceived.contains(ackNumber)) {
-			   System.out.println("Duplicate ACKS received(Sorcerers Apprentice Bug).");
-			   System.exit(1);
+			   System.out.println("Duplicate ACKS received(Sorcerers Apprentice Bug)");
+			   System.out.println("Terminating Request.");
+			   return;
 		   }
 		   acksReceived.add(ackNumber);
 		   
