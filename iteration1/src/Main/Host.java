@@ -29,7 +29,9 @@ public class Host {
 			System.out.println("Host: Waiting for package...");
 			sockR.receive(receivePacket);
 			System.out.println("Host: Package received");
-	        (new Thread(new HostConnectionManager(receivePacket,mode,packetNumber,delayTime))).start();
+			Thread thread = new Thread(new HostConnectionManager(receivePacket,mode,packetNumber,delayTime));
+	        thread.start();
+	        while(thread.isAlive()); // Wait until the request is complete, or until the Host's Socket timesout
 		}catch(IOException e) {
 			System.out.println("Host: Fatal error");
 			sockR.close();

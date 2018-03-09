@@ -22,12 +22,12 @@ public class HostConnectionManager extends Thread{
 		try {
 			socket = new DatagramSocket();
 			System.out.println("HostThread: New port on: "+socket.getLocalPort());
-			socket.setSoTimeout(5000);
+			socket.setSoTimeout(20000);
 		}catch(SocketException e) {
 			System.out.println("HostThread: An error occured while trying to create a socket for client connection.");
 			try {
 				socket = new DatagramSocket();
-				socket.setSoTimeout(5000);
+				socket.setSoTimeout(20000);
 				System.out.println("Problem?");
 			}catch(SocketException se) {
 				System.out.println("HostThread: Second try to create socket failed. Closing thread");
