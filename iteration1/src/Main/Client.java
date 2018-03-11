@@ -41,7 +41,7 @@ public class Client {
 	   receivePacket=new DatagramPacket(rcvData, rcvData.length); //initialize receiving packet - receiving will load data into rcvData directly
 	   try {
 		   sockRS = new DatagramSocket();
-		   sockRS.setSoTimeout(50000);
+		   sockRS.setSoTimeout(10000);
 	   } catch (Exception e) {   // Can't create the socket.
 		   e.printStackTrace();
 		   System.exit(1);
@@ -109,6 +109,20 @@ public class Client {
 	   }
 	   try {							
 		   sockRS.receive(receivePacket);
+	   }catch(SocketTimeoutException e) {
+		   //No server response, trying one more time
+		   try{
+			   sockRS.send(sendPacket);
+			   sockRS.receive(receivePacket);
+		   }catch(SocketTimeoutException ex) {
+			   System.out.println("Second attempt to contact server has failed. I quit.");
+			   return;
+		   }catch(IOException ex) {
+			   System.out.println("An error occurred when trying to send the request");
+			   ex.printStackTrace();
+		   }catch(Exception ex){
+			   ex.printStackTrace();
+		   }
 	   }catch(Exception e){
 		   e.printStackTrace();
 		   System.exit(1);
