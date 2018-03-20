@@ -41,7 +41,6 @@ public class Client {
 	   receivePacket=new DatagramPacket(rcvData, rcvData.length); //initialize receiving packet - receiving will load data into rcvData directly
 	   try {
 		   sockRS = new DatagramSocket();
-		   sockRS.setSoTimeout(10000);
 	   } catch (Exception e) {   // Can't create the socket.
 		   e.printStackTrace();
 		   System.exit(1);
