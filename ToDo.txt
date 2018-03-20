@@ -1,28 +1,21 @@
 To-Do
 Update Client
--add timeout handling
--duplicate ACK handling
+-update to handle type 4 and 5 errors
 
 Update Server
--add timeout handling
--duplicate ACK handling
+-update to handle type 4 and 5 errors
 
 Update Error Sim
-Add console for error generation
-Add duplication
-Add packet loss
-Add delay
+create type 4 and 5 errors
 
 Update Documentation
 
 Thomas
--Client
--Server
+Client
+
 
 Eric
--console
--delay
+Server
 
 Liz
--packet loss
--duplication
+Error Sim
