@@ -198,7 +198,7 @@ public class ClientConnectionThread extends Thread{
 	//attempt to send DATA and receive ACK. If ACK isn't received, re-send the DATA.
 	private void sendData() {
 		try {
-			sendReceiveSocket.setSoTimeout(50000);
+			sendReceiveSocket.setSoTimeout(5000);
     		sendReceiveSocket.send(dataPacket);
     		sendReceiveSocket.receive(ACKPacket);
 			//sendReceiveSocket.setSoTimeout(0);
