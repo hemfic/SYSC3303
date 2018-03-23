@@ -22,13 +22,13 @@ public class ClientConnectionThread extends Thread{
 	AsynchronousFileChannel fileController;
 	ByteBuffer dataBuffer;
 	ByteBuffer errorBuffer;
-	
+	InetSocketAddress clientAddress;
 	boolean verbose;
 	
 	public ClientConnectionThread(DatagramPacket request,int id, boolean v) {
 		threadId = id;
 		verbose = v;
-		
+		clientAddress = (InetSocketAddress) request.getSocketAddress();
 		try {
 			sendReceiveSocket = new DatagramSocket();
 		}catch(SocketException e) {
@@ -130,7 +130,7 @@ public class ClientConnectionThread extends Thread{
 						return respondError("Cannot read from file",1);
 					}catch(IllegalArgumentException e) {
 						printMessage(e.getCause().toString());
-						return respondError("Illegal Argument",5);
+						return respondError("Illegal Argument",4);
 					}catch(Exception e) {
 						printMessage(e.getCause().toString());
 						e.printStackTrace();
@@ -161,8 +161,8 @@ public class ClientConnectionThread extends Thread{
 		    	
 		    	sendData();
 		    	int ackNumber = ByteBuffer.wrap(ack).getShort(2);
-		    	//If ACKPacket is as expected then move to the next block, else send a TFTP ERROR 0?
-		    	if(!acksReceived.contains(ackNumber)) {
+		    	//If ACKPacket is as expected then move to the next block, else send a TFTP ERROR 4
+		    	if(!acksReceived.contains(ackNumber)&&acksReceived.contains(ackNumber-1)) {
 		    		++block;
 		    		acksReceived.add(ackNumber);
 		    		printMessage("rc = "+rc);
@@ -170,7 +170,7 @@ public class ClientConnectionThread extends Thread{
 		    	}else {
 		    		rc = 512;
 		    		printMessage("Unexpected packet Received");
-		    		return respondError("Duplicate ACK received(Sorcere's Apprentice Bug)",0);
+		    		return respondError("Duplicate ACK received(Sorcerer's Apprentice Bug)",4);
 		    	}
 		    }
 		    fileController.close();
@@ -201,6 +201,9 @@ public class ClientConnectionThread extends Thread{
 			sendReceiveSocket.setSoTimeout(5000);
     		sendReceiveSocket.send(dataPacket);
     		sendReceiveSocket.receive(ACKPacket);
+    		if(ACKPacket.getSocketAddress()!=clientAddress) {
+    			respondError("INVALID TID",5,(InetSocketAddress)ACKPacket.getSocketAddress());    			
+    		}
 			//sendReceiveSocket.setSoTimeout(0);
 		}catch(SocketTimeoutException e){ 
 			 System.out.println("ACK was not received. Attempting to re-send DATA. ");
@@ -229,6 +232,7 @@ public class ClientConnectionThread extends Thread{
 	    	dataBuffer.putShort((short)3);
 	    	//block
 	    	int block = 0;
+	    	int prevBlock;
 	    	//data
 		    byte[] data = new byte[516];
 	    	++block;
@@ -245,34 +249,49 @@ public class ClientConnectionThread extends Thread{
 		    while (rc==512) {
 		    	dataPacket = new DatagramPacket(data,516);
 		    	sendReceiveSocket.receive(dataPacket);
-		    	dataBuffer=ByteBuffer.allocate(512);
-		    	dataBuffer.put(Arrays.copyOfRange(data,4,dataPacket.getLength()));
-		    	block = unsignedToBytes(data[2])*256;
-		    	block += unsignedToBytes(data[3]);
-		    	ack[2] = data[2];
-		    	ack[3] = data[3];
-		    	dataBuffer.flip();
-				while(true) {
-					try {
-						lock = fileController.lock().get();
-						break;
-					}catch(NonWritableChannelException e) {
-						return respondError("Cannot read from file",1);
-					}catch(IllegalArgumentException e) {
-						printMessage(e.getCause().toString());
-						return respondError("Illegal Argument",5);
-					}catch(Exception e) {
-						printMessage(e.getCause().toString());
-						e.printStackTrace();
-					}
-				}
-		    	fileController.write(dataBuffer,(block-1)*512);
-		    	lock.release();
-		    	try {
-		    		sendReceiveSocket.send(ACKPacket);
-		    	}catch(IOException e) {
-		    		printMessage("IOException while trying to send data packet");
-		    		e.printStackTrace();
+		    	if(dataPacket.getSocketAddress()!=clientAddress) {
+		    		respondError("INVALID TID",5,(InetSocketAddress)dataPacket.getSocketAddress());
+		    		
+		    	}else {
+		    		if(data[0]!=0||data[1]!=3) {
+		    			respondError("INVALID OPERATION",4);
+		    		}else {
+		    			dataBuffer=ByteBuffer.allocate(512);
+				    	dataBuffer.put(Arrays.copyOfRange(data,4,dataPacket.getLength()));
+				    	block = unsignedToBytes(data[2])*256;
+				    	block += unsignedToBytes(data[3]);
+				    	prevBlock = unsignedToBytes(ack[2])*256;
+				    	prevBlock += unsignedToBytes(ack[3]);
+				    	if(prevBlock+1!=block) {
+				    		
+				    	}else {
+				    		ack[2] = data[2];
+					    	ack[3] = data[3];
+					    	dataBuffer.flip();
+							while(true) {
+								try {
+									lock = fileController.lock().get();
+									break;
+								}catch(NonWritableChannelException e) {
+									return respondError("Cannot read from file",1);
+								}catch(IllegalArgumentException e) {
+									printMessage(e.getCause().toString());
+									return respondError("Illegal Argument",4);
+								}catch(Exception e) {
+									printMessage(e.getCause().toString());
+									e.printStackTrace();
+								}
+							}
+					    	fileController.write(dataBuffer,(block-1)*512);
+					    	lock.release();
+					    	try {
+					    		sendReceiveSocket.send(ACKPacket);
+					    	}catch(IOException e) {
+					    		printMessage("IOException while trying to send data packet");
+					    		e.printStackTrace();
+					    	}
+				    	}
+		    		}
 		    	}
 		    }
 		    fileController.close();
@@ -306,6 +325,28 @@ public class ClientConnectionThread extends Thread{
 			return -1;
 		}
 	}
+	
+	private int respondError(String errorMsg,int errorCode,InetSocketAddress dest) {
+		printMessage("AN ERROR OCCURRED: "+errorMsg);
+		//(2)05 |  (02)ErrorCode |   ? ErrMsg   |  (1) 0
+		byte[] errorArray = errorMsg.getBytes();
+		errorBuffer = ByteBuffer.allocate((errorArray.length+5));
+		errorBuffer.putShort((short)5).putShort((short)errorCode).put(errorArray).put((byte)0);
+		
+		printMessage("Sending error packet to: "+ dest.getAddress()+dest.getPort());
+		
+		dataPacket = new DatagramPacket(errorBuffer.array(),errorBuffer.position(),dest.getAddress(),dest.getPort());
+		try {
+			sendReceiveSocket.send(dataPacket);
+			printMessage("error packet sent");
+			return 5;
+		}catch(IOException e) {
+			printMessage("An error occurred while tring to send an error report. Ironic");
+			e.printStackTrace();
+			return -1;
+		}
+	}
+	
 	private static int unsignedToBytes(byte a) {
 		int b = a & 0xFF;
 		return b;
