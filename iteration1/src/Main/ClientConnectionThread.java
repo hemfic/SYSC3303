@@ -13,22 +13,18 @@ public class ClientConnectionThread extends Thread{
 	DatagramPacket ACKPacket,dataPacket;
 	DatagramSocket sendReceiveSocket;
 	
-	int threadId, test;
-	
+	int threadId, test, clientTID;
 	String serverFiles = "src/Main/ServerFiles";
 	
 	DatagramPacket clientRequest;
-	
 	AsynchronousFileChannel fileController;
-	ByteBuffer dataBuffer;
-	ByteBuffer errorBuffer;
-	InetSocketAddress clientAddress;
+	ByteBuffer dataBuffer, errorBuffer;
 	boolean verbose;
 	
 	public ClientConnectionThread(DatagramPacket request,int id, boolean v) {
 		threadId = id;
 		verbose = v;
-		clientAddress = (InetSocketAddress) request.getSocketAddress();
+		clientTID = request.getPort();
 		try {
 			sendReceiveSocket = new DatagramSocket();
 		}catch(SocketException e) {
@@ -162,7 +158,7 @@ public class ClientConnectionThread extends Thread{
 		    	sendData();
 		    	int ackNumber = ByteBuffer.wrap(ack).getShort(2);
 		    	//If ACKPacket is as expected then move to the next block, else send a TFTP ERROR 4
-		    	if(!acksReceived.contains(ackNumber)&&acksReceived.contains(ackNumber-1)) {
+		    	if(!acksReceived.contains(ackNumber)) {
 		    		++block;
 		    		acksReceived.add(ackNumber);
 		    		printMessage("rc = "+rc);
@@ -201,7 +197,7 @@ public class ClientConnectionThread extends Thread{
 			sendReceiveSocket.setSoTimeout(5000);
     		sendReceiveSocket.send(dataPacket);
     		sendReceiveSocket.receive(ACKPacket);
-    		if(ACKPacket.getSocketAddress()!=clientAddress) {
+    		if(ACKPacket.getPort()!= clientTID) {
     			respondError("INVALID TID",5,(InetSocketAddress)ACKPacket.getSocketAddress());    			
     		}
 			//sendReceiveSocket.setSoTimeout(0);
@@ -249,7 +245,7 @@ public class ClientConnectionThread extends Thread{
 		    while (rc==512) {
 		    	dataPacket = new DatagramPacket(data,516);
 		    	sendReceiveSocket.receive(dataPacket);
-		    	if(dataPacket.getSocketAddress()!=clientAddress) {
+		    	if(dataPacket.getPort()!=clientTID) {
 		    		respondError("INVALID TID",5,(InetSocketAddress)dataPacket.getSocketAddress());
 		    		
 		    	}else {

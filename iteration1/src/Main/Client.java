@@ -34,6 +34,7 @@ public class Client {
    private DatagramSocket sockRS;
    private byte[] rcvData; 						//buffer for receiving data
    private final int HOSTPORT = 23, SERVERPORT = 69;
+   private int serverTID;
    private boolean verbose=false;
 
    public Client() {
@@ -108,11 +109,13 @@ public class Client {
 	   }
 	   try {							
 		   sockRS.receive(receivePacket);
+		   serverTID = receivePacket.getPort();
 	   }catch(SocketTimeoutException e) {
 		   //No server response, trying one more time
 		   try{
 			   sockRS.send(sendPacket);
 			   sockRS.receive(receivePacket);
+			   serverTID = receivePacket.getPort();
 		   }catch(SocketTimeoutException ex) {
 			   System.out.println("Second attempt to contact server has failed. I quit.");
 			   return;
@@ -188,7 +191,6 @@ public class Client {
 	   
 	   System.out.println("Error Message: " + new String(errorMessage));
 	   System.out.println("Terminating Request");
-	   //System.exit(1);
 	   return -1;
    }
    
@@ -196,10 +198,9 @@ public class Client {
    public void handleRead(String filename) {
 	   FileOutputStream fout=null;
 	   String folderStructure = "src/Main/ClientFiles/";
-	   InetAddress serverAddress= receivePacket.getAddress();
-	   int serverPort=receivePacket.getPort();
-	   int i=0; 
-	   boolean done=false;
+	   InetAddress serverAddress = receivePacket.getAddress();
+	   int serverPort = receivePacket.getPort();
+	   boolean done = false;
 	   byte[] data= {};
 	   try {
 		   fout=new FileOutputStream(folderStructure+filename);
@@ -245,14 +246,16 @@ public class Client {
 		   }
 		   if(!done) {
 			   try {
-				   rcvData= new byte[516];
-				   receivePacket=new DatagramPacket(rcvData,rcvData.length,serverAddress,serverPort);
+				   rcvData = new byte[516];
+				   receivePacket = new DatagramPacket(rcvData,rcvData.length,serverAddress,serverPort);
 				   sockRS.receive(receivePacket);
 				   
 				   if(rcvData[0]==0 && rcvData[1]==5) {
 					  handleError();
 					  return;
 				   }
+				   
+				   if(!validatePacket(3)) return; //terminate request if invalid packet is Invalid
 				   
 			   } catch (IOException e) {
 				   e.printStackTrace();
@@ -363,8 +366,9 @@ public class Client {
 		   if(rcvData[0]==0 && rcvData[1]==5) {
 			  handleError();
 	       }
-		   
-	   } catch (SocketTimeoutException e) {
+		   if(!validatePacket(4)) return; //terminate request if invalid packet is Invalid
+
+		} catch (SocketTimeoutException e) {
 		   if(verbose) {
 			   System.out.println("ACK was not received. Attempting to re-send DATA. ");
 		   }
@@ -412,11 +416,37 @@ public class Client {
 	   send(1,"ReadWriteForbidden.txt","test.txt",1);
 	   return true;
    }
+   
+   
    private static int unsignedToBytes(byte a) {
 		int b = a & 0xFF;
 		return b;
 	}
-
+   
+   private boolean verifyTID() {
+	   if(receivePacket.getPort()!= serverTID) {
+		   System.out.println("Invalid TID detected. Terminating request.");
+		   return false;
+	   }
+	   return true;
+   }
+   
+   private boolean validatePacket(int opcode) {
+	   if(receivePacket.getLength() < 4) {
+		   System.out.println("Illegal TFTP Operation. Packet too short.");
+		   return false;
+	   }
+	   if(receivePacket.getData()[1] != opcode || receivePacket.getData()[0] != 0) {
+		   System.out.println("Illegal TFTP Operation. Packet too short.");
+		   return false;
+	   }
+	   if(receivePacket.getPort()!= serverTID) {
+		   System.out.println("Invalid TID detected. Terminating request.");
+		   return false;
+	   }
+	   return true;
+   }
+   
    public static void main(String args[])
    {
 	  String source="";
