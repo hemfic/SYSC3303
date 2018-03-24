@@ -14,7 +14,7 @@ public class Host {
 	public Host() {
 		settings = new HostSettings();
 		System.out.println("Creating Host");
-		System.out.printf("The Host simulates errors that occur in connections%nMode can be changed at (almost) any time as well as exitting.%nThe host will continue to recieve and start new threads in the selected mode%nDefault mode is '1', error free mode");
+		System.out.printf("The Host simulates errors that occur in connections%nMode can be changed at (almost) any time as well as exitting.%nThe host will continue to recieve and start new threads in the selected mode%nDefault mode is '1', error free mode\n");
 		Thread thread = new Thread(new HostConsoleThread(settings));
 		thread.start();
 		rcvData=new byte[516];					//buffer for receiving data
@@ -49,8 +49,8 @@ public class Host {
 		sockR.close();
 		System.exit(1);
 	}
-//	public static void main(String[] args) {
-//		//Host h=new Host();
-//		recieve();
-//	}
+	public static void main(String[] args) {
+		Host h=new Host();
+		h.run();
+	}
 }
