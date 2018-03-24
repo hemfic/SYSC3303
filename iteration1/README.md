@@ -1,6 +1,6 @@
 # SYSC3303
 
-Term Project: Iteration 3
+Term Project: Iteration 4
 
 Creating a request
       1. Run Server.java. Enter "true" in the console for Verbose Mode, and "false" for Quiet Mode.
@@ -11,10 +11,10 @@ Creating a request
       Note: For a RRQ, the File to Read from should be placed in src/Main/ServerFiles
             For a WRQ, the File to Read from should be placed in src/Main/ClientFiles
 
-Testing for iteration 3
+
+Testing for iteration 3/4
       	The mode for the host will have to be set before ANY client request is made. If unexpectedly the host stops running, you may have to rerun it. 
       	
-      
 Testing for iteration 2
       Using the file explorer if desired, alter the permissions of the file ReadWriteForbidden.txt (It would seem it is impossible to send with the permissions as they are). Deny all.
       A test suite has been created to test most of the errors asked for in this Iteration2. In the console it is option 3.
@@ -27,6 +27,8 @@ Files:
 Client.java: sends and receives files to/from the Server, using the Host as an intermediate
 
 Host.java: receives packet from Client. Creates a HostConnectionManager thread to the retransmit the packet. Note: this class and HostConnectionManager were named as such, since they aren't simulating errors yet, but rather acting as a intermediate host for the Client and Server.
+
+HostConsoleThread.java : a thread which receives user input in order to select the test settings.
 
 HostConnectionManager.java: forwards packet to it's destination (server/client)
 
@@ -51,16 +53,19 @@ Sarah Elizabeth "Liz" Davies  -- 100828244 -- SarahDavies4@cmail.carleton.ca
   Assignment for iteration 1: Server
   Assignment for iteration 2: Diagrams/ReadMe/Assisting with errors
   Assignment for iteration 3: packet loss, duplication
+  Assignment for iteration 4: Error Sim (errors 4/5)
 
 Eric Reesor - 1000970401 - ericreesor@cmail.carleton.ca
   Assignment for iteration 1: Client
   Assignment for iteration 2: Server
   Assignment for iteration 3: console, delay
+  Assignment for iteration 4: Server (errors 4/5)
 
 Thomas Carriere - 100947281 - thomasdehaancarriere@cmail.carleton.ca
   Assignment for iteration 1: Diagrams
   Assignment for iteration 2: Client
   ASsignment for iteration 3: Client/Server adaptation
+  Assignment for iteration 4: Client (errors 4/5)
 
 Melissa Seaman (MIA) - 100939062 - melissaseaman@cmail.carleton.ca
   Assignment for iteration 1: User Interface -- Not completed.
