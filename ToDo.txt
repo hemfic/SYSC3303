@@ -1,21 +1,21 @@
 To-Do
 Update Client
--update to handle type 4 and 5 errors
+-update to accept server IP
+-update testing suite
 
 Update Server
--update to handle type 4 and 5 errors
 
 Update Error Sim
-create type 4 and 5 errors
+-
 
 Update Documentation
-
+-Error Sim
 Thomas
-Client
+documentation
 
 
 Eric
-Server
+client-Server IP
 
 Liz
-Error Sim
+client-Testing
