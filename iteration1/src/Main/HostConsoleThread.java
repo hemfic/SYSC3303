@@ -16,7 +16,7 @@ public class HostConsoleThread extends Thread {
 			System.out.println("2) Lose Packet");
 			System.out.println("3) Delay Packet");
 			System.out.println("4) Duplicate Packet");
-			System.out.println("5) Flip shit(error 4)");
+			System.out.println("5) Flip Bit(error 4)");
 			int mode = getInteger();
 			if(mode==0) {
 	    		System.out.println("Exiting");	    		
