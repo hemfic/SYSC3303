@@ -34,10 +34,13 @@ public class Client {
    private DatagramSocket sockRS;
    private byte[] rcvData; 						//buffer for receiving data
    private final int HOSTPORT = 23, SERVERPORT = 69;
+   private static InetAddress ip;
    private boolean verbose=false;
+   private static int testNum;
 
    public Client() {
-	   rcvData=new byte[516]; 			
+	   testNum=0;
+	   rcvData=new byte[516]; 
 	   receivePacket=new DatagramPacket(rcvData, rcvData.length); //initialize receiving packet - receiving will load data into rcvData directly
 	   try {
 		   sockRS = new DatagramSocket();
@@ -47,7 +50,7 @@ public class Client {
 	   }
    }
    
-   public void send(int type, String source,String dest, int operMode, InetAddress ip, int port) {
+   public void send(int type, String source,String dest, int operMode) {
 	   int index = 2;	//offset for packet creation
 	   int sendPort = SERVERPORT; 
 	   String t = "netascii";
@@ -198,7 +201,6 @@ public class Client {
 	   String folderStructure = "src/Main/ClientFiles/";
 	   InetAddress serverAddress= receivePacket.getAddress();
 	   int serverPort=receivePacket.getPort();
-	   int i=0; 
 	   boolean done=false;
 	   byte[] data= {};
 	   try {
@@ -412,6 +414,16 @@ public class Client {
 	   send(1,"ReadWriteForbidden.txt","test.txt",1);
 	   return true;
    }
+   public boolean testSuite2() {
+	   System.out.printf("%n%n%n%n");
+	   System.out.printf("Files for this test will be saved to: Test%d.txt\n",testNum);
+	   System.out.println("\nTesting a proper WRQ through the error sim\n");
+	   send(2,"MarkedFile.txt","Test"+testNum+".txt",2);
+	   System.out.println("\nTesting a proper RRQ throught the error sim\n");
+	   send(1,"MarkedFile.txt","Test"+testNum+".txt",2);
+	   testNum = testNum+1;
+	   return true;
+   }
    private static int unsignedToBytes(byte a) {
 		int b = a & 0xFF;
 		return b;
@@ -432,13 +444,13 @@ public class Client {
     		  c.toggleVerbose();
     		  System.out.println("Verbose toggled. Now: "+c.getVerboseState());
     	  }
-    	  System.out.println("1) Read Request \n2) Write Request\n3) Run test suite\nType Exit at any point to exit");
+    	  System.out.println("1) Read Request \n2) Write Request\n3) Run test suite\n4) Run WRQ and RRQ through error sim\nType Exit at any point to exit");
     	  input=s.nextLine();
     	  requestType =0;
     	  requestType = Integer.parseInt(input);
     	  System.out.println("Enter Server IP in format => x.x.x.x");
     	  input=s.nextLine();
-    	  InetAddress ip=null;
+    	  ip=null;
     	  try {
     		  ip = InetAddress.getByName(input);
     	  } catch (UnknownHostException e1) {
@@ -471,7 +483,7 @@ public class Client {
         	  input=s.nextLine();
     	  }
     	  
-    	  if(requestType!=1 && requestType!=2 && requestType!=3) break;
+    	  if(requestType!=1 && requestType!=2 && requestType!=3 && requestType!=4) break;
     	  if(requestType==1) {
     		  System.out.println("Enter filename of source for read");
         	  source = s.nextLine();
@@ -486,8 +498,13 @@ public class Client {
         	  System.out.println("Enter filename of destination for write");
           	  destination = s.nextLine();
           	  if(destination.equalsIgnoreCase("exit")) {break;}
-    	  }else {
+    	  }else if(requestType==3){
     		  c.testSuite();
+    		  continue;
+    	  }else if(requestType==4){
+    		  c.testSuite2();
+    		  continue;
+    	  }else {
     		  s.close();
     	      System.exit(1);
     	  }
@@ -505,7 +522,7 @@ public class Client {
    	  	  System.out.println("Settings ok? y/n");
    	  	  input = s.nextLine();
     	  if(input.equalsIgnoreCase("y")) {
-    		  c.send(requestType,source,destination,operMode, ip, port);
+    		  c.send(requestType,source,destination,operMode);
     	  }
     	}
       s.close();
