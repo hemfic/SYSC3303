@@ -87,7 +87,7 @@ public class Client {
 	   sendData[index + typeB.length]=0;
 	   
 	   try {
-		   sendPacket=new DatagramPacket(sendData, sendData.length,InetAddress.getLocalHost() , sendPort);
+		   sendPacket=new DatagramPacket(sendData, sendData.length,ip , sendPort);
 		   sockRS.send(sendPacket);		//load packet and send
 		   
 	   } catch (Exception e) {
@@ -102,11 +102,7 @@ public class Client {
 		   }else {
 			   System.out.print("WRQ to: ");
 		   }
-		   try {
-			   System.out.print(" IP:"+InetAddress.getLocalHost().getHostAddress()+" Port:"+sendPort);
-		   } catch (UnknownHostException e1) {
-			   e1.printStackTrace();
-		   }
+		   System.out.print(" IP:"+sendPacket.getAddress().toString()+" Port:"+sendPort);
 		   System.out.println(" Source filename: "+source+" Mode: ASCII");
 	   }
 	   try {							
@@ -138,11 +134,7 @@ public class Client {
 	   if(rcvData[0]== 0 &&rcvData[1]==3) {
 		   if(verbose) {
 			   System.out.print("Received: DATA from: ");
-			   try {
-				   System.out.print(" IP:"+InetAddress.getLocalHost().getHostAddress()+" Port:"+sendPort);
-			   } catch (UnknownHostException e1) {
-				   e1.printStackTrace();
-			   }
+			   System.out.print(" IP:"+sendPacket.getAddress().toString()+" Port:"+sendPort);
 			   System.out.println(" Block:"+(rcvData[3]+rcvData[2]*16)+" Data Size: "+receivePacket.getLength());
 		   }
 		   handleRead(dest);
@@ -150,11 +142,7 @@ public class Client {
 	   if(rcvData[0]==0 && rcvData[1]==4) {
 		   if(verbose) {
 			   System.out.print("Received: ACK from: ");
-			   try {
-				   System.out.print(" IP:"+InetAddress.getLocalHost().getHostAddress()+" Port:"+sendPort);
-			   } catch (UnknownHostException e1) {
-				   e1.printStackTrace();
-			   }
+			   System.out.print(" IP:"+sendPacket.getAddress().toString()+" Port:"+sendPort);
 			   System.out.println(" Block: 0");
 		   }
 		   handleWrite(source);
@@ -181,11 +169,7 @@ public class Client {
    public int handleError() {
 	   if(verbose) {
 		   System.out.print("ERROR TYPE " + rcvData[3] + " received from");
-		   try {
-			   System.out.println(" IP:"+InetAddress.getLocalHost().getHostAddress()+" Port:"+receivePacket.getPort());
-		   } catch (UnknownHostException e1) {
-			   e1.printStackTrace();
-		   }		
+		   System.out.println(" IP:"+receivePacket.getAddress().toString()+" Port:"+receivePacket.getPort());		
 	   }
 	   byte[] errorMessage = Arrays.copyOfRange(rcvData, 4,receivePacket.getLength());
 	   
@@ -238,11 +222,7 @@ public class Client {
 		   }
 		   if(verbose) {
 			   System.out.print("Sent: ACK to: ");
-			   try {
-				   System.out.print(" IP:"+InetAddress.getLocalHost().getHostAddress()+" Port:"+sendPacket.getPort());
-			   } catch (UnknownHostException e1) {
-				   e1.printStackTrace();
-		   		}
+			   System.out.print(" IP:"+sendPacket.getAddress().toString()+" Port:"+sendPacket.getPort());
 		   		System.out.println(" Block: "+block);
 		   }
 		   if(!done) {
@@ -262,11 +242,7 @@ public class Client {
 			   }
 			   if(verbose) {
 				   System.out.print("Received: DATA from: ");
-				   try {
-					   System.out.print(" IP:"+InetAddress.getLocalHost().getHostAddress()+" Port:"+sendPacket.getPort());
-				   } catch (UnknownHostException e1) {
-					   e1.printStackTrace();
-				   }
+				   System.out.print(" IP:"+receivePacket.getAddress().toString()+" Port:"+sendPacket.getPort());
 				   System.out.println(" Block:"+(rcvData[3]+rcvData[2]*16)+" Data Size: "+receivePacket.getLength());
 			   }
 			   
@@ -288,7 +264,6 @@ public class Client {
    public void handleWrite(String filename) {
 	   FileInputStream fin=null;
 	   Set<Integer> acksReceived = new HashSet<Integer>();
-	   
 	   String folderStructure = "src/Main/ClientFiles/";
 	   File f= new File(folderStructure+filename);
 	   InetAddress serverAddress = receivePacket.getAddress();
@@ -350,11 +325,7 @@ public class Client {
 	  
 		   if(verbose) {
 			   System.out.print("Sent: DATA to: ");
-			   try {
-				   System.out.print(" IP:"+InetAddress.getLocalHost().getHostAddress()+" Port:"+sendPacket.getPort());
-			   } catch (UnknownHostException e1) {
-				   e1.printStackTrace();
-			   }
+			   System.out.print(" IP:"+sendPacket.getAddress().toString()+" Port:"+sendPacket.getPort());
 			   System.out.println(" Block: "+(index+1)+" Data Size: "+(sendPacket.getLength()-4));
 		   }
 	  
@@ -378,11 +349,7 @@ public class Client {
 	   }
 	   if(verbose) {
 		   System.out.print("Received: ACK from: ");
-		   try {
-			   System.out.print(" IP:"+InetAddress.getLocalHost().getHostAddress()+" Port:"+sendPacket.getPort());
-		   } catch (UnknownHostException e1) {
-			   e1.printStackTrace();
-		   }
+		   System.out.print(" IP:"+receivePacket.getAddress().toString()+" Port:"+sendPacket.getPort());
 		   System.out.println(" Block: "+(index+1));
 	   }
    }

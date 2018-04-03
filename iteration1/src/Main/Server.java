@@ -64,7 +64,7 @@ public class Server {
 	public void verboseUI() {
 		consoleResponse = new BufferedReader(new InputStreamReader(System.in));
 		while(true) {
-			System.out.printf("Launching server. Verbose mode is: ");
+			System.out.printf("Launching server. Verbose mode is: (true/false) => ");
 			try {
 				String input = consoleResponse.readLine();
 			

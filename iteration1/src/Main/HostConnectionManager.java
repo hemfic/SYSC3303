@@ -69,7 +69,7 @@ public class HostConnectionManager extends Thread{
 					datagramOut = new DatagramPacket(datagramIn.getData(),datagramIn.getLength(),clientAddress);
 					System.out.println("HostThread: Server -> Client");
 				}else {
-					System.out.println("HostThread: Interlopping connection");
+					System.out.println("HostThread: Interlooping connection");
 					System.out.println("HostThread: Server address: "+serverAddress);
 					System.out.println("HostThread: Client address: "+clientAddress);
 					System.out.println("HostThread: New address: "+datagramIn.getSocketAddress());
